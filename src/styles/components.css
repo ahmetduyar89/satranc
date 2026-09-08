@@ -1,0 +1,614 @@
+/* ==================================================================== *
+ * components.css — Düğmeler, kartlar, kutucuklar, rozet ve göstergeler
+ *
+ * Düğmeler "basılabilir" görünür: altlarında koyu bir dudak vardır,
+ * tıklanınca aşağı iner ve dudak incelir. Küçük çocuklar için bu geri
+ * bildirim, renk değişiminden çok daha anlaşılırdır.
+ * ==================================================================== */
+
+.primary, .ghost, .danger, .choice, .segmented button {
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 900;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 160ms ease;
+}
+
+.primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--sky));
+  box-shadow: 0 5px 0 var(--primary-dark), 0 12px 22px rgba(18, 165, 148, 0.28);
+}
+
+.primary:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--primary-dark), 0 16px 28px rgba(18, 165, 148, 0.32); }
+.primary:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--primary-dark); }
+
+.ghost, .choice, .segmented button {
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px solid var(--line-strong);
+  box-shadow: 0 4px 0 rgba(38, 36, 80, 0.10);
+}
+
+.ghost:hover, .choice:hover, .segmented button:hover {
+  transform: translateY(-2px);
+  background: var(--sun-soft);
+  box-shadow: 0 6px 0 rgba(38, 36, 80, 0.12);
+}
+
+.ghost:active, .choice:active, .segmented button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(38, 36, 80, 0.12);
+}
+
+.segmented button.active, .segmented button[aria-pressed="true"] {
+  color: #fff;
+  background: linear-gradient(135deg, var(--grape), var(--sky));
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 0 var(--grape-dark);
+}
+
+.danger {
+  color: #fff;
+  background: linear-gradient(135deg, var(--coral), #e0392c);
+  box-shadow: 0 5px 0 var(--coral-dark);
+}
+
+.danger:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--coral-dark); }
+
+.small {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.menu-grid, .card-grid, .badge-grid, .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: 1.1rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Ana menü kutucukları — her biri kendi renginde bir çıkartma
+ * ------------------------------------------------------------------ */
+
+.menu-tile {
+  --tone: var(--primary);
+  --tone-soft: var(--primary-soft);
+  --tone-dark: var(--primary-dark);
+  position: relative;
+  overflow: hidden;
+  min-height: 8.5rem;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.1rem;
+  border-radius: var(--r-lg);
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: 0 5px 0 var(--tone-soft), var(--shadow);
+  font-weight: 900;
+  font-size: 1.02rem;
+  text-align: left;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms ease;
+}
+
+/* Kutucuğun arkasındaki renkli ışık lekesi. */
+.menu-tile::after {
+  content: "";
+  position: absolute;
+  right: -3.5rem;
+  top: -3.5rem;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  /* Sert bir daire yerine kenarları eriyen renk lekesi. */
+  background: radial-gradient(circle, var(--tone-soft) 45%, transparent 72%);
+  transition: transform 260ms ease;
+}
+
+.menu-tile > * { position: relative; z-index: 1; }
+
+.menu-grid .menu-tile:nth-child(6n + 2) { --tone: var(--grape); --tone-soft: var(--grape-soft); --tone-dark: var(--grape-dark); }
+.menu-grid .menu-tile:nth-child(6n + 3) { --tone: var(--sky);   --tone-soft: var(--sky-soft);   --tone-dark: var(--sky-dark); }
+.menu-grid .menu-tile:nth-child(6n + 4) { --tone: var(--sun);   --tone-soft: var(--sun-soft);   --tone-dark: var(--sun-dark); }
+.menu-grid .menu-tile:nth-child(6n + 5) { --tone: var(--pink);  --tone-soft: var(--pink-soft);  --tone-dark: var(--pink-dark); }
+.menu-grid .menu-tile:nth-child(6n + 6) { --tone: var(--lime);  --tone-soft: var(--lime-soft);  --tone-dark: var(--lime-dark); }
+
+.menu-tile .icon {
+  width: 3.1rem;
+  height: 3.1rem;
+  padding: 0.72rem;
+  border-radius: 1.1rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--tone), var(--tone-dark));
+  box-shadow: 0 4px 0 rgba(38, 36, 80, 0.12), 0 10px 18px rgba(38, 36, 80, 0.16);
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.menu-tile:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 11px 0 var(--tone-soft), var(--shadow-lift);
+}
+
+.menu-tile:hover .icon { transform: rotate(-10deg) scale(1.1); }
+.menu-tile:hover::after { transform: scale(1.25); }
+.menu-tile:active { transform: translateY(-1px); }
+
+.hero-board, .side-panel, .settings-panel, .piece-detail {
+  display: grid;
+  gap: 1rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Kartlar
+ * ------------------------------------------------------------------ */
+
+.lesson-card, .info-card, .side-panel, .settings-panel, .quiz-box, .puzzle-card, .badge-card, .stat {
+  border-radius: var(--r-lg);
+  padding: 1.15rem;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms ease;
+}
+
+.lesson-card:hover, .info-card:hover, .badge-card:hover, .puzzle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lift);
+  border-color: rgba(123, 92, 240, 0.28);
+}
+
+.quiz-box {
+  background: linear-gradient(135deg, #fff, var(--sun-soft));
+  border-color: rgba(255, 176, 32, 0.35);
+}
+
+.card-icon, .badge-medal {
+  width: 3.3rem;
+  height: 3.3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1.1rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--sky));
+  box-shadow: 0 4px 0 rgba(38, 36, 80, 0.1);
+  font-size: 1.5rem;
+}
+
+.card-icon .icon, .badge-medal .icon { width: 1.7rem; height: 1.7rem; }
+
+.info-card h3, .lesson-card h3, .puzzle-card h3, .badge-card h3 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.info-card p, .lesson-card p, .puzzle-card p, .badge-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------------ *
+ * İlerleme halkası ve sayaçlar
+ * ------------------------------------------------------------------ */
+
+.progress-ring {
+  --size: 9rem;
+  width: var(--size);
+  height: var(--size);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--lime) 0, var(--primary) calc(var(--value) * 0.6%), var(--sky) calc(var(--value) * 1%), rgba(38, 36, 80, 0.08) 0);
+  position: relative;
+  margin: auto;
+  box-shadow: 0 8px 20px rgba(66, 60, 125, 0.16);
+}
+
+.progress-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0.8rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 2px 8px rgba(38, 36, 80, 0.08);
+}
+
+.ring-value, .progress-ring span {
+  position: relative;
+  z-index: 1;
+  font-weight: 900;
+}
+
+.ring-value { font-size: 1.5rem; color: var(--primary-dark); }
+
+.progress-ring span {
+  align-self: end;
+  margin-bottom: 1.6rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.stat {
+  text-align: center;
+  background: linear-gradient(135deg, #fff, var(--grape-soft));
+  border-color: rgba(123, 92, 240, 0.2);
+}
+
+.stat + .stat {
+  background: linear-gradient(135deg, #fff, var(--sun-soft));
+  border-color: rgba(255, 176, 32, 0.35);
+}
+
+.stat strong {
+  display: block;
+  font-size: 2.1rem;
+  line-height: 1.1;
+  color: var(--grape-dark);
+}
+
+.stat + .stat strong { color: var(--sun-dark); }
+
+.stat span, .pill, small { color: var(--muted); font-weight: 700; }
+
+.piece-picker, .score-strip {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.piece-chip, .pill {
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  background: var(--panel);
+  border: 2px solid var(--line-strong);
+  box-shadow: 0 3px 0 rgba(38, 36, 80, 0.08);
+  font-weight: 900;
+  transition: transform 140ms ease, background 160ms ease;
+}
+
+.piece-chip:hover { transform: translateY(-2px); background: var(--sky-soft); }
+
+.piece-chip.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--grape), var(--sky));
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 3px 0 var(--grape-dark);
+}
+
+.piece-podium {
+  min-height: 9.5rem;
+  display: grid;
+  place-items: center;
+  font-size: 6.5rem;
+  animation: spinPiece 5s linear infinite;
+  filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.18));
+}
+
+@keyframes spinPiece {
+  50% { transform: rotateY(22deg) translateY(-6px); }
+}
+
+.choice.correct {
+  color: #fff;
+  background: linear-gradient(135deg, var(--lime), var(--primary));
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 0 var(--lime-dark);
+  animation: pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.choice.wrong {
+  color: #fff;
+  background: linear-gradient(135deg, var(--coral), #e0392c);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 0 var(--coral-dark);
+  animation: shake 180ms linear 2;
+}
+
+@keyframes shake { 50% { transform: translateX(6px); } }
+@keyframes pop { 45% { transform: scale(1.07); } }
+
+.puzzle-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.8rem;
+  max-height: 35rem;
+  overflow: auto;
+}
+
+.move-log, .big-coordinate {
+  padding: 1rem;
+  border-radius: var(--r-md);
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+}
+
+.big-coordinate {
+  font-size: 3.4rem;
+  font-weight: 900;
+  text-align: center;
+  color: var(--grape-dark);
+  background: linear-gradient(135deg, #fff, var(--grape-soft));
+}
+
+.badge-card.locked {
+  filter: grayscale(0.85);
+  opacity: 0.6;
+}
+
+.badge-card.unlocked {
+  background: linear-gradient(135deg, #fff, var(--sun-soft));
+  border-color: rgba(255, 176, 32, 0.45);
+}
+
+.badge-card.unlocked .badge-medal {
+  color: #7a4c00;
+  background: linear-gradient(135deg, #ffe08a, var(--sun));
+  animation: badgeGlow 1.8s ease-in-out infinite;
+}
+
+@keyframes badgeGlow { 50% { box-shadow: 0 0 30px rgba(255, 176, 32, 0.75); } }
+
+.setting-row {
+  min-height: 3.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+}
+
+.setting-row:hover { background: var(--sky-soft); }
+
+/* ------------------------------------------------------------------ *
+ * Yapay zekâ öğretmeni
+ * ------------------------------------------------------------------ */
+
+.teacher-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.teacher-chat {
+  min-height: 18rem;
+  max-height: 25rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--sky-soft), #fff);
+  border: 2px solid var(--line);
+}
+
+.chat-bubble {
+  max-width: 86%;
+  padding: 0.8rem 1rem;
+  border-radius: 1.2rem;
+  line-height: 1.45;
+  font-weight: 600;
+  box-shadow: 0 3px 0 rgba(38, 36, 80, 0.07);
+}
+
+.chat-bubble.teacher {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.35rem;
+  background: #fff;
+  border: 2px solid rgba(18, 165, 148, 0.28);
+}
+
+.chat-bubble.student {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.35rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--grape), var(--sky));
+  box-shadow: 0 3px 0 var(--grape-dark);
+}
+
+.quick-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.teacher-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.teacher-input {
+  min-height: 3rem;
+  width: 100%;
+  border-radius: 999px;
+  border: 2px solid var(--line-strong);
+  padding: 0 1.1rem;
+  color: var(--ink);
+  background: var(--panel);
+  font-weight: 700;
+}
+
+.teacher-input:focus {
+  outline: none;
+  border-color: var(--sky);
+  box-shadow: 0 0 0 4px var(--sky-soft);
+}
+
+.lesson-flow, .move-player {
+  padding: 1.15rem;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.lesson-flow h2, .move-player h3 {
+  margin: 0 0 0.6rem;
+}
+
+.lesson-flow ol {
+  margin: 0.7rem 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.lesson-flow li + li {
+  margin-top: 0.4rem;
+}
+
+.speak-button .icon {
+  color: var(--primary);
+}
+
+.move-player {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.move-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.move-head p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.move-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.move-caption {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--lime-soft), #fff);
+  border: 2px solid rgba(92, 199, 76, 0.35);
+  font-weight: 800;
+}
+
+.wide-band {
+  display: grid;
+}
+
+/* Klavyeyle gezinenler için her yerde net bir odak halkası. */
+:focus-visible {
+  outline: 3px solid var(--grape);
+  outline-offset: 3px;
+  border-radius: 0.4rem;
+}
+
+@media (max-width: 620px) {
+  .move-head, .teacher-form {
+    grid-template-columns: 1fr;
+  }
+
+  .move-actions {
+    justify-content: stretch;
+  }
+
+  .move-actions button, .teacher-form button {
+    width: 100%;
+  }
+}
+
+.particle {
+  position: fixed;
+  width: 0.6rem;
+  height: 0.6rem;
+  pointer-events: none;
+  background: var(--primary-2);
+  border-radius: 50%;
+  animation: particle 620ms ease-out forwards;
+}
+
+@keyframes particle {
+  to {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateX(4rem);
+  }
+}
+/* ================================================================== *
+ * Taş çizimleri (PieceGlyph.js)
+ *
+ * Altı taşın tamamı kendi vektör çizimimizdir. Görüş kutusu tam olarak
+ * mürekkebi çerçeveler, bu yüzden SVG'nin yüksekliği = taşın görünen
+ * yüksekliğidir ve kullanıldığı yerin yazı ölçüsüne (1em) bağlanır;
+ * tahtada bu ölçü kareye göre verilir (chessboard.css).
+ *
+ * Bütün taşlar aynı kutuyu paylaştığı için kaideleri hizalıdır; kutu
+ * geometrik olarak ortalandığında taş da kareye ortalanır. Unicode
+ * taşlardaki "mürekkep taban çizgisine oturur" sorunu böylece kökten
+ * ortadan kalkar — hizayı ölçmek için yazı tipi metriği gerekmez.
+ * ================================================================== */
+
+.piece-svg {
+  height: 1em;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+/* Gövde: dolgu taşın rengi, İNCE dış hat taşın kontur rengi. */
+.piece-svg g {
+  fill: currentColor;
+  stroke: var(--pc-line, currentColor);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* İnce iç çizgiler: sarık katları, filin yarığı, atın yelesi. */
+.piece-svg .ic-cizgi {
+  fill: none;
+  stroke: var(--pc-detail, currentColor);
+  stroke-width: 1.3;
+}
+
+/* Atın gözü — çizgi değil, dolu nokta. */
+.piece-svg .ic-nokta {
+  fill: var(--pc-detail, currentColor);
+  stroke: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Taş renkleri
+ *
+ * Tahtada, terfi penceresinde, alınan taş şeridinde, ders kartlarında ve
+ * mini oyunlarda taşlar HER YERDE bu iki sınıfla renklenir.
+ * ------------------------------------------------------------------ */
+
+.pc-w {
+  color: #fffaf0;
+  --pc-line: #3a2d22;
+  --pc-detail: rgba(58, 45, 34, 0.55);
+}
+
+.pc-b {
+  color: #3a3060;
+  --pc-line: #1a1440;
+  --pc-detail: rgba(255, 255, 255, 0.5);
+}
