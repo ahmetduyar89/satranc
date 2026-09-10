@@ -1,7 +1,7 @@
 /**
  * MiniGamesPage.js — Mini oyun seçme ve oynama ekranı.
  *
- * Yedi oyunun tamamı gerçekten oynanabilir. Her oyun `src/games/` altında ayrı
+ * Oyunların tamamı gerçekten oynanabilir. Her oyun `src/games/` altında ayrı
  * bir dosyadır ve ortak `GameShell` iskeletini kullanır; bu sayede puan, süre,
  * seri ve bitiş ekranı davranışı her oyunda aynıdır.
  */
@@ -17,11 +17,19 @@ import { createMateDash } from "../games/MateDash.js";
 import { createGuessMove } from "../games/GuessMove.js";
 import { createMemoryFlash } from "../games/MemoryFlash.js";
 import { createMatchMoves } from "../games/MatchMoves.js";
+import { createArmySetup } from "../games/ArmySetup.js";
+import { createCheckOrMate } from "../games/CheckOrMate.js";
+import { createKnightQuest } from "../games/KnightQuest.js";
+import { createFreePiece } from "../games/FreePiece.js";
 import { pageShell } from "./pageUtils.js";
 
 /** Oyun üreticileri — her seferinde temiz bir örnek kurulur. */
 const FACTORIES = [
+  createArmySetup,
   createMoveTarget,
+  createCheckOrMate,
+  createKnightQuest,
+  createFreePiece,
   createSquareFinder,
   createPieceQuiz,
   createMateDash,
@@ -85,7 +93,7 @@ export function MiniGamesPage({ progress, sound }) {
 
   return pageShell(
     "Mini Oyunlar",
-    "Yedi farklı oyunla satranç refleksini güçlendir. Her oyun puan ve XP kazandırır!",
+    "Farklı oyunlarla satranç refleksini güçlendir. Her oyun puan ve XP kazandırır!",
     [host]
   );
 }
