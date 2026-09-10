@@ -23,7 +23,11 @@ const paths = {
   menuClose: "M3 6h18M3 12h9M3 18h18M20 9l-3 3 3 3",
   menuOpen: "M3 6h18M3 12h9M3 18h18M17 9l3 3-3 3",
   expand: "M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6",
-  shrink: "M9 4v5H4M15 20v-5h5M10 10L4 4M14 14l6 6"
+  shrink: "M9 4v5H4M15 20v-5h5M10 10L4 4M14 14l6 6",
+  // Satranç saati: kadran, duraklat ve devam et
+  clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3.5 2",
+  pause: "M9 5v14M15 5v14",
+  play: "M8 5l11 7-11 7z"
 };
 
 export function icon(name, className = "icon") {

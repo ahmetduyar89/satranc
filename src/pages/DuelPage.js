@@ -16,12 +16,19 @@
  *                       kendi oyuncusunun gözünden çizilir. İki tahta TEK konumu
  *                       paylaşır: birinde yapılan hamle diğerinde anında görünür.
  *
+ * Oyunun üstünde bir SKOR TAHTASI durur: iki satranç saati, materyal farkı ve
+ * maç skoru. Üçü de gerçek satrançtan gelir — saat turnuvanın vazgeçilmez
+ * aracıdır, materyal puanı (piyon 1, at/fil 3, kale 5, vezir 9) çocuğun "kim
+ * önde?" sorusunu kendi kendine yanıtlamasını sağlar, maç skoru ise arka arkaya
+ * oynanan oyunları turnuvadaki gibi 1 / ½ / 0 olarak toplar.
+ *
  * Bilgisayar yoktur, yapay zekâ yoktur; kuralları yine kendi motorumuz denetler.
  */
 
 import { el } from "../utils/dom.js";
 import { ChessBoard } from "../components/ChessBoard.js";
 import { Chess, PIECE_NAMES_TR, sanTr } from "../engine/Chess.js";
+import { SIMPLE_VALUES } from "../engine/Evaluator.js";
 import { icon } from "../components/Icon.js";
 import { pieceHTML } from "../components/PieceGlyph.js";
 import { burst } from "../animations/effects.js";
@@ -37,6 +44,42 @@ const EMPTY_FEN = "8/8/8/8/8/8/8/8 w - - 0 1";
 const PALETTE_TYPES = ["k", "q", "r", "b", "n", "p"];
 
 const COLOR_NAMES = { w: "Beyaz", b: "Siyah" };
+
+/**
+ * Satranç saati seçenekleri.
+ *
+ * Gerçek satrançta her oyuncunun KENDİ süresi vardır: hamleni yapıp saate
+ * basınca senin saatin durur, rakibinin saati işlemeye başlar. Turnuva
+ * temposu "15+10" gibi yazılır — 15 dakika süre, her hamleden sonra 10 saniye
+ * EKLEME (Fischer eklemesi). Ekleme, son saniyelerde bile hamleyi tahtaya
+ * koyacak kadar zaman bırakır; çocuk oyunlarında bu, "süre bitti" ile biten
+ * oyunların sayısını belirgin biçimde azaltır.
+ */
+const TIME_CONTROLS = [
+  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 }
+];
+
+/** Maç puanını satranç geleneğine göre yazar: 0.5 → "½", 1.5 → "1½". */
+function scoreText(value) {
+  const whole = Math.floor(value);
+  if (value - whole < 0.5) return String(whole);
+  return whole === 0 ? "½" : `${whole}½`;
+}
+
+/**
+ * Kalan süreyi saat gibi yazar.
+ * Son 10 saniyede onda birler görünür — gerçek dijital satranç saatleri de
+ * tam orada saliseye geçer, çünkü son saniyeler oyunun en gergin anıdır.
+ */
+function clockText(ms) {
+  if (ms <= 0) return "0:00";
+  if (ms < 10000) return (Math.ceil(ms / 100) / 10).toFixed(1);
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
 
 /** Standart başlangıç dizilişini kare → taş kodu haritası olarak verir. */
 function standardSetup() {
@@ -69,6 +112,23 @@ export function DuelPage({ sound }) {
 
   const names = { w: "Beyaz Oyuncu", b: "Siyah Oyuncu" };
 
+  /* --- Saat --- */
+
+  let timeControl = TIME_CONTROLS[0]; // seçili tempo (varsayılan: süresiz)
+  const clock = { w: 0, b: 0 }; // oyuncuların BANKASI: kalan süre (ms)
+  let clockSide = null; // saati işleyen taraf
+  let clockRunning = false; // saat akıyor mu (duraklatma bunu kapatır)
+  let clockSince = 0; // işleyen tarafın saatinin başladığı an
+  let timerId = null; // ekranı tazeleyen sayaç
+  let timeoutLoser = null; // süresi biten taraf; oyun geri alınamaz
+  const lowWarned = { w: false, b: false }; // "son 10 saniye" uyarısı bir kez çalar
+
+  /* --- Puan --- */
+
+  /** Maç skoru: kazanan 1, beraberlik ½ — turnuvadaki gibi oyunlar boyunca birikir. */
+  const match = { w: 0, b: 0 };
+  let lastAward = null; // son oyunun maç puanı; hamle geri alınırsa iade edilir
+
   /** Ekrandaki tahtalar: { side, api, card, turnTag, captured, nameTag }. */
   let seats = [];
 
@@ -82,6 +142,44 @@ export function DuelPage({ sound }) {
   const moveList = el("ol", { className: "move-list" });
   const resultHost = el("div", { className: "duel-result" });
   const paletteHost = el("div", { className: "duel-palette" });
+
+  /* ---------------------------------------------------------------- *
+   * Skor tahtası — iki saat, materyal farkı ve maç skoru
+   *
+   * Tahtaların ÜSTÜNDE, iki düzende de aynı yerde durur. Bilerek tek bir
+   * şerittir: akıllı tahtaya yansıtılan sınıfta iki çocuk da, izleyen sınıf da
+   * aynı yere bakar. (Saatleri tahta kartlarının içine koymak yan yana iki
+   * tahta düzeninde ikisini de küçültür ve uzaktan okunmaz kılardı.)
+   * ---------------------------------------------------------------- */
+
+  const clockViews = {}; // renk → saat kutusu
+  const scoreSides = {}; // renk → skor şeridindeki oyuncu kutusu
+  const scoreNames = {}; // renk → ad yazısı
+  const leadEl = el("span", { className: "duel-lead" });
+  const matchEl = el("span", { className: "duel-match-score" });
+
+  function scoreSide(color) {
+    const nameTag = el("strong", { className: "duel-score-name" });
+    const clockTag = el("span", { className: "duel-clock" });
+    const box = el("div", { className: "duel-score-side", "data-side": color }, [
+      el("span", { className: "duel-score-piece", html: pieceHTML(`${color}k`) }),
+      el("div", { className: "duel-score-id" }, [
+        nameTag,
+        el("small", { text: `${COLOR_NAMES[color]} taşlar` })
+      ]),
+      clockTag
+    ]);
+    clockViews[color] = clockTag;
+    scoreNames[color] = nameTag;
+    scoreSides[color] = box;
+    return box;
+  }
+
+  const scoreBar = el("div", { className: "duel-scorebar", hidden: "" }, [
+    scoreSide("w"),
+    el("div", { className: "duel-score-center" }, [leadEl, matchEl]),
+    scoreSide("b")
+  ]);
 
   /* ---------------------------------------------------------------- *
    * Kurulum: taş dizme
@@ -217,6 +315,219 @@ export function DuelPage({ sound }) {
   }
 
   /* ---------------------------------------------------------------- *
+   * Satranç saati
+   *
+   * Süre TEK yerde tutulur: `clock[renk]` o oyuncunun bankasıdır ve yalnızca
+   * saat el değiştirdiğinde güncellenir. Ekranda görünen kalan süre her
+   * karede "banka − (şimdi − saatin başladığı an)" olarak HESAPLANIR.
+   *
+   * Sayaçtan bir tık düşürmek (remaining -= 1) daha kolay olurdu ama yanlış
+   * olurdu: tarayıcı sekme arka plandayken zamanlayıcıları seyrekleştirir,
+   * saniyeler sessizce kaybolur ve oyunun sonunda saatler gerçekte geçen
+   * süreyi göstermez. Gerçek zamanı ölçmek her durumda doğru sonucu verir.
+   * ---------------------------------------------------------------- */
+
+  /** Saatli oyun mu? */
+  function timed() {
+    return timeControl.base > 0;
+  }
+
+  /** Bir oyuncunun O AN kalan süresi (ms). */
+  function remaining(color) {
+    let left = clock[color];
+    if (clockRunning && clockSide === color) left -= Date.now() - clockSince;
+    return Math.max(0, left);
+  }
+
+  /** İşleyen saati durdurur ve harcanan süreyi bankaya yazar. */
+  function holdClock() {
+    if (clockRunning && clockSide) {
+      clock[clockSide] = Math.max(0, clock[clockSide] - (Date.now() - clockSince));
+    }
+    clockRunning = false;
+  }
+
+  /** Saati verilen oyuncuya geçirir ve çalıştırır. */
+  function passClock(color) {
+    holdClock();
+    if (!timed()) return;
+    clockSide = color;
+    clockSince = Date.now();
+    clockRunning = true;
+  }
+
+  /**
+   * Hamleyi yapan oyuncu "saate basar": önce eklemesini alır, sonra saat
+   * rakibe geçer. Ekleme hamleden SONRA verilir; gerçek saatlerde de böyledir.
+   */
+  function pressClock(mover) {
+    if (!timed()) return;
+    holdClock();
+    clock[mover] += timeControl.increment * 1000;
+    passClock(mover === "w" ? "b" : "w");
+  }
+
+  /** Saatleri seçili tempoya göre sıfırlar. */
+  function resetClocks() {
+    stopTicking();
+    clock.w = timeControl.base * 1000;
+    clock.b = timeControl.base * 1000;
+    clockSide = null;
+    clockRunning = false;
+    timeoutLoser = null;
+    lowWarned.w = false;
+    lowWarned.b = false;
+  }
+
+  /** Ekranı tazeleyen sayacı kurar (200 ms: son saniyelerde saliseler akıcı görünsün). */
+  function startTicking() {
+    stopTicking();
+    if (timed()) timerId = setInterval(tick, 200);
+  }
+
+  function stopTicking() {
+    if (timerId === null) return;
+    clearInterval(timerId);
+    timerId = null;
+  }
+
+  /**
+   * Saat tıkı.
+   *
+   * Yönlendirici sayfalara "kapanıyorsun" demez; başka bir ekrana geçildiğinde
+   * bu sayfanın kökü DOM'dan kopar. Temizliği bu yüzden saatin KENDİSİ yapar,
+   * yoksa sayaç arka planda işlemeye devam ederdi.
+   */
+  function tick() {
+    if (!page.isConnected) {
+      stopTicking();
+      return;
+    }
+    paintClocks();
+    if (clockRunning && clockSide && remaining(clockSide) <= 0) flagFall(clockSide);
+  }
+
+  /** Süresi biten oyuncu için oyunu bitirir. */
+  function flagFall(color) {
+    holdClock();
+    clock[color] = 0;
+    stopTicking();
+    timeoutLoser = color;
+
+    const rival = color === "w" ? "b" : "w";
+    // FIDE kuralı: süre biter ama rakipte mat edecek taş yoksa oyun BERABERE
+    // biter. Kimsenin kazanamayacağı bir konumda saat de kazandırmaz.
+    const canMate = hasMatingMaterial(rival);
+
+    endGame({
+      winner: canMate ? rival : null,
+      // Metinler oyuncu ADIYLA birleşecek biçimde kurulur: varsayılan ad zaten
+      // "Beyaz Oyuncu" olduğu için "… oyuncunun" demek "Oyuncu oyuncunun"
+      // gibi tuhaf bir cümle üretiyordu.
+      reason: canMate
+        ? `Süre bitti! ${names[color]} için zaman kalmadı.`
+        : `Süre bitti ama ${names[rival]} mat edecek taşı olmadığı için kazanamaz — beraberlik.`
+    });
+  }
+
+  /** Bir tarafın mat edebilecek taşı var mı? (Şah + tek hafif taş mat edemez.) */
+  function hasMatingMaterial(color) {
+    let minors = 0;
+    for (const piece of Object.values(chess.pieceMap())) {
+      if (piece.color !== color) continue;
+      if (piece.type === "p" || piece.type === "r" || piece.type === "q") return true;
+      if (piece.type === "n" || piece.type === "b") minors += 1;
+    }
+    return minors >= 2;
+  }
+
+  /** Saati duraklatır ya da devam ettirir. */
+  function togglePause() {
+    if (!timed() || phase !== "play" || finished) return;
+    if (clockRunning) holdClock();
+    else passClock(clockSide || chess.turnColor());
+    sound.play("click");
+    refresh();
+  }
+
+  /** Saat duraklatılmış mı? (Duraklatınca tahtalar da kilitlenir — gerçek saatte de sıra durur.) */
+  function isPaused() {
+    return timed() && phase === "play" && !finished && !clockRunning;
+  }
+
+  /** Saat kutularını yazar; azalan süre önce sararır, son 10 saniyede kızarır. */
+  function paintClocks() {
+    for (const color of ["w", "b"]) {
+      const view = clockViews[color];
+      view.hidden = !timed();
+      if (!timed()) continue;
+
+      const left = remaining(color);
+      view.textContent = clockText(left);
+      view.classList.toggle("running", clockRunning && clockSide === color);
+      view.classList.toggle("low", left <= 60000 && left > 10000);
+      view.classList.toggle("critical", left <= 10000);
+
+      // Uyarı sesi oyun başına BİR KEZ çalar; her tıkta çalsaydı sınıfta
+      // katlanılmaz bir gürültü olurdu.
+      if (left <= 10000 && clockRunning && clockSide === color && !lowWarned[color]) {
+        lowWarned[color] = true;
+        sound.play("error");
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Puan hesabı
+   * ---------------------------------------------------------------- */
+
+  /** Her oyuncunun ALDIĞI taşların puan toplamı. */
+  function capturedPoints() {
+    const captured = chess.capturedPieces();
+    const sum = (list) => list.reduce((total, type) => total + SIMPLE_VALUES[type], 0);
+    // captured[renk] = O RENKTEN kaybedilen taşlar; onları rakibi almıştır.
+    return { w: sum(captured.b), b: sum(captured.w) };
+  }
+
+  /**
+   * Tahtada KALAN materyalin farkı (artı ise beyaz önde).
+   *
+   * Bilerek alınan taşların farkı değil, kalan taşların farkıdır: bu ekranda
+   * konumu çocuklar kendileri kuruyor, oyun eşit materyalle başlamayabilir.
+   * Kalan taşları saymak her kuruluşta doğru cevabı verir.
+   */
+  function materialLead() {
+    let balance = 0;
+    for (const piece of Object.values(chess.pieceMap())) {
+      if (piece.type === "k") continue;
+      balance += (piece.color === "w" ? 1 : -1) * SIMPLE_VALUES[piece.type];
+    }
+    return balance;
+  }
+
+  /** Biten oyunun maç puanını yazar (kazanan 1, beraberlik ½). */
+  function awardMatch(winner) {
+    lastAward = winner === null ? { w: 0.5, b: 0.5 } : { w: winner === "w" ? 1 : 0, b: winner === "b" ? 1 : 0 };
+    match.w += lastAward.w;
+    match.b += lastAward.b;
+  }
+
+  /** Skor şeridini tazeler. */
+  function paintScore() {
+    const lead = materialLead();
+    leadEl.textContent = lead === 0 ? "Taşlar eşit" : `${COLOR_NAMES[lead > 0 ? "w" : "b"]} +${Math.abs(lead)}`;
+    leadEl.className = `duel-lead ${lead === 0 ? "even" : lead > 0 ? "w" : "b"}`;
+    matchEl.textContent = `Maç ${scoreText(match.w)} – ${scoreText(match.b)}`;
+
+    const turn = chess.turnColor();
+    for (const color of ["w", "b"]) {
+      scoreNames[color].textContent = names[color];
+      scoreSides[color].classList.toggle("active", phase === "play" && !finished && turn === color);
+    }
+    paintClocks();
+  }
+
+  /* ---------------------------------------------------------------- *
    * Aşama geçişleri
    * ---------------------------------------------------------------- */
 
@@ -228,10 +539,22 @@ export function DuelPage({ sound }) {
     setup = position ? new Map(position) : new Map();
     phase = "setup";
     finished = false;
+    lastAward = null;
+
+    // BOŞ tahtadan başlamak yeni bir maç demektir; maç skoru sıfırlanır.
+    // Var olan dizilişi düzeltmek ("Dizilişi değiştir") ise aynı maçın
+    // içindedir — orada skorun silinmesi öğretmenin canını sıkardı.
+    if (position === null) {
+      match.w = 0;
+      match.b = 0;
+    }
     moveList.replaceChildren();
     resultHost.replaceChildren();
     setupPanel.hidden = false;
     playPanel.hidden = true;
+    scoreBar.hidden = true;
+    stageEl.classList.remove("playing");
+    resetClocks();
     applySetup();
   }
 
@@ -248,11 +571,20 @@ export function DuelPage({ sound }) {
     chess.load(startFen);
     phase = "play";
     finished = false;
+    lastAward = null;
     moveList.replaceChildren();
     resultHost.replaceChildren();
     for (const seat of seats) seat.api.attach(chess);
     setupPanel.hidden = true;
     playPanel.hidden = false;
+    scoreBar.hidden = false;
+    stageEl.classList.add("playing");
+    // Turnuvada olduğu gibi ilk hamleyi yapacak oyuncunun saati hemen işler.
+    resetClocks();
+    if (timed()) {
+      passClock(startTurn);
+      startTicking();
+    }
     sound.play("success");
     refresh();
   }
@@ -262,9 +594,16 @@ export function DuelPage({ sound }) {
     if (!startFen) return;
     chess.load(startFen);
     finished = false;
+    // Yeni oyunun puanı ayrı yazılır; biten oyunun puanı maç skorunda KALIR.
+    lastAward = null;
     moveList.replaceChildren();
     resultHost.replaceChildren();
     for (const seat of seats) seat.api.attach(chess);
+    resetClocks();
+    if (timed()) {
+      passClock(chess.turnColor());
+      startTicking();
+    }
     sound.play("click");
     refresh();
   }
@@ -279,6 +618,12 @@ export function DuelPage({ sound }) {
    */
   function handleMove(side, move) {
     if (phase !== "play") return;
+
+    if (isPaused()) {
+      statusEl.textContent = "Saat duraklatıldı — devam etmek için ▶ düğmesine bas.";
+      sound.play("error");
+      return;
+    }
 
     const turn = chess.turnColor();
     if (side !== null && side !== turn) {
@@ -298,6 +643,7 @@ export function DuelPage({ sound }) {
     appendMove(played);
     // TEK konum, İKİ görüntü: hamle her iki tahtada da aynı anda oynatılır.
     for (const seat of seats) seat.api.update({ from: played.from, to: played.to });
+    pressClock(played.color);
     refresh();
     announceEnd();
 
@@ -334,12 +680,38 @@ export function DuelPage({ sound }) {
   /** Son hamleyi geri alır — sınıfta "yanlışlıkla oldu" anları için. */
   function undoMove() {
     if (phase !== "play") return;
-    if (!chess.undo()) return;
+
+    // Süre bittikten sonra geri almak anlamsızdır: saat zaten sıfırdadır,
+    // geri alınan hamlenin ardından ilk tıkta yeniden biterdi.
+    if (timeoutLoser) {
+      statusEl.textContent = "Süre bittiği için hamle geri alınamaz — oyunu yeniden başlatabilirsiniz.";
+      sound.play("error");
+      return;
+    }
+
+    const undone = chess.undo();
+    if (!undone) return;
 
     sound.play("click");
+
+    // Oyun bitmişti ve geri alındıysa maç puanı da geri verilir.
+    if (finished && lastAward) {
+      match.w -= lastAward.w;
+      match.b -= lastAward.b;
+      lastAward = null;
+    }
     finished = false;
     resultHost.replaceChildren();
     if (moveList.lastChild) moveList.lastChild.remove();
+
+    // Saat de geri sarılır: hamleyle kazanılan ekleme silinir ve saat, hamleyi
+    // yapan oyuncuya iade edilir — sıra yeniden onda olduğu için.
+    if (timed()) {
+      holdClock();
+      clock[undone.color] = Math.max(0, clock[undone.color] - timeControl.increment * 1000);
+      passClock(undone.color);
+      startTicking();
+    }
 
     const history = chess.getHistory({ verbose: true });
     const previous = history.length > 0 ? history[history.length - 1] : null;
@@ -349,24 +721,40 @@ export function DuelPage({ sound }) {
     refresh();
   }
 
-  /** Oyun bittiyse sonuç kartını gösterir. */
+  /** Motorun kurallarına göre oyun bittiyse sonucu duyurur. */
   function announceEnd() {
     const status = chess.status();
     if (!status.over || finished) return;
+    endGame({ winner: status.winner, reason: status.reason });
+  }
+
+  /**
+   * Oyunu bitirir: saati durdurur, maç puanını yazar ve sonuç kartını gösterir.
+   *
+   * Hem motorun bulduğu sonuçlar (mat, pat, beraberlik) hem de motorun
+   * BİLMEDİĞİ sonuç (süre bitmesi) buradan geçer; oyun tek bir yerde biter.
+   */
+  function endGame({ winner, reason }) {
+    if (finished) return;
 
     finished = true;
+    holdClock();
+    stopTicking();
+    awardMatch(winner);
     sound.play("badge");
 
     const winnerLine =
-      status.winner === null
-        ? "Beraberlik — ikiniz de iyi oynadınız."
-        : `Kazanan: ${names[status.winner]}`;
+      winner === null ? "Beraberlik — ikiniz de iyi oynadınız." : `Kazanan: ${names[winner]}`;
 
     resultHost.replaceChildren(
       el("section", { className: "duel-result-card" }, [
-        el("span", { className: "duel-result-emoji", text: status.winner === null ? "🤝" : "🏆" }),
-        el("h3", { text: status.reason }),
+        el("span", { className: "duel-result-emoji", text: winner === null ? "🤝" : "🏆" }),
+        el("h3", { text: reason }),
         el("p", { text: winnerLine }),
+        el("p", {
+          className: "duel-result-match",
+          text: `Maç skoru — ${names.w} ${scoreText(match.w)} : ${scoreText(match.b)} ${names.b}`
+        }),
         el("div", { className: "duel-result-actions" }, [
           el("button", {
             className: "primary",
@@ -384,6 +772,7 @@ export function DuelPage({ sound }) {
       ])
     );
     burst(resultHost);
+    refresh();
   }
 
   /** Hamle listesine yeni satır ekler. */
@@ -454,18 +843,24 @@ export function DuelPage({ sound }) {
   /** Alınan taş şeridini yazar. */
   function renderCaptured(seat) {
     const captured = chess.capturedPieces();
+    const points = capturedPoints();
 
     /** Bir tarafın ALDIĞI taşlar: rakip renkte kaybedilenlerdir. */
     const group = (label, color) => {
       const list = captured[color];
+      // Bu taşları ALAN oyuncu, taşların sahibinin rakibidir.
+      const owner = color === "w" ? "b" : "w";
       return el("span", { className: "captured-group" }, [
         el("span", { className: "captured-label", text: label }),
         ...(list.length === 0
           ? [el("span", { className: "captured-empty", text: "—" })]
           : list.map((type) =>
               el("span", { className: "captured-piece", html: pieceHTML(color + type) })
-            ))
-      ]);
+            )),
+        // Puan rozeti yalnızca taş alındığında görünür; "0 puan" yazmak
+        // çocuğa kaybettiği bir şey varmış gibi gelirdi.
+        list.length === 0 ? null : el("span", { className: "captured-points", text: `${points[owner]} puan` })
+      ].filter(Boolean));
     };
 
     if (seat.side) {
@@ -479,10 +874,17 @@ export function DuelPage({ sound }) {
   function refresh() {
     const turn = chess.turnColor();
     const status = phase === "play" ? chess.status() : { over: false, reason: "" };
+    const paused = isPaused();
+    // Oyun motorun bulduğu bir sonuçla BİTMİŞ olabilir (mat, pat) ya da
+    // motorun görmediği bir sonuçla (süre bitmesi); etiketler ikisini de
+    // "bitti" saymalıdır.
+    const ended = status.over || finished;
 
     for (const seat of seats) {
       const myTurn = seat.side === null || seat.side === turn;
-      const canPlay = phase === "play" && !status.over && myTurn;
+      // Saat duraklatılmışken tahtalar kilitlenir; gerçek satrançta da saat
+      // durduğunda hamle yapılamaz.
+      const canPlay = phase === "play" && !ended && !paused && myTurn;
 
       seat.api.setInteractive(canPlay);
       seat.card.classList.toggle("active", canPlay && seat.side !== null);
@@ -492,22 +894,33 @@ export function DuelPage({ sound }) {
         seat.nameTag.textContent = names[seat.side];
         seat.roleTag.textContent = `${COLOR_NAMES[seat.side]} taşlar`;
         seat.turnTag.textContent =
-          phase === "setup" ? "Kurulum" : status.over ? "Oyun bitti" : myTurn ? "Sıra sende" : "Bekliyor";
+          phase === "setup" ? "Kurulum" : ended ? "Oyun bitti" : myTurn ? "Sıra sende" : "Bekliyor";
       } else {
         seat.nameTag.textContent = phase === "setup" ? "Kurulum tahtası" : names[turn];
         seat.roleTag.textContent =
           phase === "setup" ? "Taşları birlikte dizin" : `${COLOR_NAMES[turn]} taşları oynuyor`;
-        seat.turnTag.textContent = status.over ? "Oyun bitti" : phase === "setup" ? "" : "Sıra";
+        seat.turnTag.textContent = ended ? "Oyun bitti" : phase === "setup" ? "" : "Sıra";
       }
 
       renderCaptured(seat);
     }
 
     if (phase === "play") {
-      statusEl.textContent = status.over
-        ? status.reason
-        : status.reason || `Sıra: ${names[turn]} — ${COLOR_NAMES[turn].toLowerCase()} taşlar.`;
+      if (paused) {
+        statusEl.textContent = "⏸ Saat duraklatıldı — devam etmek için ▶ düğmesine bas.";
+      } else if (ended) {
+        statusEl.textContent = status.over ? status.reason : "Oyun bitti — sonuç kartı yanda.";
+      } else {
+        statusEl.textContent =
+          status.reason || `Sıra: ${names[turn]} — ${COLOR_NAMES[turn].toLowerCase()} taşlar.`;
+      }
+      paintScore();
     }
+
+    pauseButton.hidden = !timed() || phase !== "play" || finished;
+    pauseButton.innerHTML = icon(paused ? "play" : "pause");
+    pauseButton.title = paused ? "Saati devam ettir" : "Saati duraklat";
+    pauseButton.setAttribute("aria-label", pauseButton.title);
 
     flipButton.hidden = layout !== "single";
     autoFlipBox.hidden = layout !== "single";
@@ -613,6 +1026,39 @@ export function DuelPage({ sound }) {
     ])
   );
 
+  /* --- Kurulum: satranç saati seçimi --- */
+
+  const timeNote = el("p", { className: "duel-time-note" });
+
+  /** Seçili temponun ne anlama geldiğini çocuk diliyle anlatır. */
+  function timeHint() {
+    if (!timed()) return "Saat kapalı: iki oyuncu da istediği kadar düşünebilir.";
+    const base = `Her oyuncuya ${timeControl.base / 60} dakika. Süresi biten oyunu kaybeder.`;
+    return timeControl.increment > 0
+      ? `${base} Her hamleden sonra saatine ${timeControl.increment} saniye eklenir.`
+      : base;
+  }
+
+  const timeButtons = TIME_CONTROLS.map((option) =>
+    el("button", {
+      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+      type: "button",
+      "data-time": option.id,
+      title: `${option.label} — ${option.detail}`,
+      onClick: (event) => {
+        timeControl = option;
+        sound.play("click");
+        for (const button of event.currentTarget.parentElement.children) {
+          button.classList.toggle("active", button.dataset.time === option.id);
+        }
+        resetClocks();
+        timeNote.textContent = timeHint();
+      }
+    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
+  );
+
+  timeNote.textContent = timeHint();
+
   /** Oyuncu adı kutusu — sınıfta "Ali vs Ayşe" yazması oyunu ciddileştirir. */
   function nameInput(color) {
     return el("input", {
@@ -657,6 +1103,9 @@ export function DuelPage({ sound }) {
     ]),
     el("label", { className: "panel-label", text: "Kim başlıyor?" }),
     el("div", { className: "segmented" }, turnButtons),
+    el("label", { className: "panel-label", text: "Satranç saati" }),
+    el("div", { className: "segmented duel-times" }, timeButtons),
+    timeNote,
     el("label", { className: "panel-label", text: "Oyuncular" }),
     el("div", { className: "duel-names" }, [nameInput("w"), nameInput("b")]),
     el("button", {
@@ -681,6 +1130,8 @@ export function DuelPage({ sound }) {
       html: icon(iconName)
     });
   }
+
+  const pauseButton = toolButton("pause", "Saati duraklat", () => togglePause());
 
   const flipButton = toolButton("board", "Tahtayı çevir", () => {
     sound.play("click");
@@ -707,6 +1158,7 @@ export function DuelPage({ sound }) {
     el("div", { className: "panel-top" }, [
       el("div", { className: "play-tools" }, [
         toolButton("route", "Son hamleyi geri al", () => undoMove()),
+        pauseButton,
         flipButton,
         toolButton("game", "Aynı dizilişle yeniden başla", () => restartGame()),
         toolButton("edit", "Dizilişi değiştir", () => {
@@ -736,18 +1188,26 @@ export function DuelPage({ sound }) {
    * Kuruluş
    * ---------------------------------------------------------------- */
 
-  buildBoards();
-  openSetup(null);
+  /*
+   * Sahne, skor şeridi açıkken `.playing` sınıfını taşır: tahtanın yükseklik
+   * hesabı şeridin kapladığı yeri buradan öğrenir (bkz. duel.css).
+   */
+  const stageEl = el("div", { className: "duel-stage" }, [layoutBar, scoreBar, boardsHost]);
 
-  return pageShell(
+  const page = pageShell(
     "İki Kişilik Oyun",
     "İki öğrenci karşı karşıya: taşları kendiniz dizin, sonra oynayın.",
     [
       el("section", { className: "duel-layout" }, [
-        el("div", { className: "duel-stage" }, [layoutBar, boardsHost]),
+        stageEl,
         el("aside", { className: "duel-panel" }, [setupPanel, playPanel])
       ])
     ],
     { compact: true }
   );
+
+  buildBoards();
+  openSetup(null);
+
+  return page;
 }

@@ -99,7 +99,8 @@ src/
     board.css
     chessboard.css
     play.css
-    duel.css        # İki kişilik oyun: kurulum paleti, yan yana iki tahta
+    duel.css        # İki kişilik oyun: kurulum paleti, skor tahtası (saatler,
+                    # materyal farkı, maç skoru) ve yan yana iki tahta
     games.css
     lessons.css     # Ders sayfaları + Tanıyalım, Öğretmen, Profil, Rozet, Ayarlar
     plan.css        # 36 haftalık program: ünite renkleri, hafta kartları, ders planı
@@ -131,6 +132,10 @@ src/
   (isteğe bağlı otomatik çevirme) ve AYNI SAYFADA yan yana iki tahta — soldaki
   beyazı, sağdaki siyahı temsil eder, her biri kendi oyuncusunun gözünden çizilir
   ve TEK konumu paylaştıkları için hamle iki tahtada da anında görünür.
+  Tahtaların üstündeki SKOR TAHTASI turnuva satrancının üç aracını taşır:
+  iki satranç saati (Süresiz / 5 dk / 10 dk / 15+10 Fischer eklemeli, duraklatma
+  düğmesiyle), tahtadaki materyal farkı (piyon 1 … vezir 9) ve oyunlar boyunca
+  biriken maç skoru (kazanan 1, beraberlik ½).
 - Yapay Zeka Öğretmeni: serbest oynanan tahta + gerçek konum analizi (Coach.js) ve soru-cevap.
 - Rozetler: 20 rozet, gruplara ayrılmış; kilitli olanlar ilerleme çubuğuyla ("4/7") gösterilir.
 - Profil: seviye/unvan, XP çubuğu, bölüm bölüm ilerleme, oyun istatistikleri, mini oyun rekorları.
@@ -223,6 +228,22 @@ oynar (ilkokul çağındaki bir çocuk için ödülün GÖRÜLMESİ, kaydedilmes
   iç çizgiler (sarık katları, filin yarığı, atın yelesi ve gözü) `--pc-detail`
   rengini alır. Tahta, terfi penceresi, alınan taş şeridi, ders kartları, taş
   seçici ve mini oyunlar aynı iki sınıfı kullanır.
+
+### İki kişilik oyunda saat
+
+Süre TEK yerde tutulur: `clock[renk]` oyuncunun bankasıdır ve yalnızca saat el
+değiştirdiğinde güncellenir; ekranda görünen kalan süre her karede
+"banka − (şimdi − saatin başladığı an)" olarak HESAPLANIR. Sayaçtan bir tık
+düşürmek (`remaining -= 1`) daha kolay olurdu ama yanlış olurdu: tarayıcı sekme
+arka plandayken zamanlayıcıları seyrekleştirir, saniyeler sessizce kaybolur ve
+oyunun sonunda saatler gerçekte geçen süreyi göstermez.
+
+Oyun TEK bir yerde biter (`endGame`): hem motorun bulduğu sonuçlar (mat, pat,
+beraberlik) hem de motorun BİLMEDİĞİ sonuç (süre bitmesi) oradan geçer. Süre
+bitince rakipte mat edecek taş yoksa oyun beraberlikle biter — FIDE kuralı.
+
+Yönlendirici sayfalara "kapanıyorsun" demediği için temizliği saatin kendisi
+yapar: her tıkta sayfanın kökü hâlâ DOM'da mı diye bakar, değilse sayacı kapatır.
 
 ## Animasyon Planı
 

@@ -45,11 +45,27 @@ Sol menüdeki **İki Kişilik Oyun** bölümü sınıf içi karşılaşmalar iç
    *Tek Tahta* (iki oyuncu aynı tahtayı paylaşır).
 2. Tahta **boş** gelir. Paletten taş seçip kareye dokunarak taşları
    öğrenciler dizer. Hazır kuruluş için **Standart Diziliş** düğmesi vardır.
-3. Oyuncu adlarını yaz, kimin başlayacağını seç ve **Oyunu Başlat**'a bas.
-4. İki tahta düzeninde birinde yapılan hamle diğerinde anında görünür;
+3. **Satranç saati** seç: *Süresiz*, *5 dk*, *10 dk* ya da *15+10* (15 dakika
+   süre, her hamleden sonra 10 saniye ekleme — turnuvalardaki tempo).
+4. Oyuncu adlarını yaz, kimin başlayacağını seç ve **Oyunu Başlat**'a bas.
+5. İki tahta düzeninde birinde yapılan hamle diğerinde anında görünür;
    sırası gelen oyuncunun tahtası yeşil çerçeveyle belirginleşir.
 
-Paneldeki ⛶ düğmesi menüyü gizleyip tahtaları büyütür (Esc ile çıkılır).
+Tahtaların üstündeki **skor tahtası** üç şey gösterir:
+
+- **İki saat.** Yalnızca sırası gelen oyuncunun saati işler; hamle yapılınca
+  saat rakibe geçer. Son 1 dakikada saat sararır, son 10 saniyede kızarır ve
+  saliseleri gösterir. Süresi biten oyunu kaybeder — ama rakibinde mat edecek
+  taş kalmamışsa oyun beraberlikle biter (FIDE kuralı).
+- **Materyal farkı.** Piyon 1, at ve fil 3, kale 5, vezir 9 puandır; rozet
+  hangi tarafın kaç puan önde olduğunu yazar. Alınan taş şeridinde de her
+  oyuncunun topladığı puan görünür.
+- **Maç skoru.** Arka arkaya oynanan oyunlar turnuvadaki gibi toplanır:
+  kazanan 1, beraberlik ½ puan. *Aynı Dizilişle Yeniden* skoru sürdürür,
+  *Yeni Diziliş* sıfırlar.
+
+Araç çubuğundaki ⏸ düğmesi saati duraklatır (o sırada tahtalar kilitlenir),
+⛶ düğmesi menüyü gizleyip tahtaları büyütür (Esc ile çıkılır).
 
 ---
 
