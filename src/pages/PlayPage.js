@@ -20,6 +20,27 @@ import { burst } from "../animations/effects.js";
 import { pageShell, focusToggle } from "./pageUtils.js";
 import { sanTr } from "../engine/Chess.js";
 
+const TIME_CONTROLS = [
+  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+];
+
+function clockText(ms) {
+  if (ms <= 0) return "0:00";
+  if (ms < 10000) return (Math.ceil(ms / 100) / 10).toFixed(1);
+  const total = Math.ceil(ms / 1000);
+  const hours = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
 export function PlayPage({ progress, sound }) {
   const game = new GameService({ level: "kolay", playerColor: "w" });
   let resultRecorded = false;
@@ -37,6 +58,11 @@ export function PlayPage({ progress, sound }) {
   const moveList = el("ol", { className: "move-list" });
   const capturedByPlayer = el("div", { className: "captured-row" });
   const capturedByEngine = el("div", { className: "captured-row" });
+  const engineClockView = el("span", { className: "play-clock", hidden: "" });
+  const playerClockView = el("span", { className: "play-clock", hidden: "" });
+  const engineRow = el("div", { className: "play-board-row" }, [capturedByEngine, engineClockView]);
+  const playerRow = el("div", { className: "play-board-row" }, [capturedByPlayer, playerClockView]);
+
   const thinkingBar = el("div", { className: "thinking-bar", hidden: "" }, [
     el("span", { className: "thinking-dot" }),
     el("span", { className: "thinking-dot" }),
@@ -44,6 +70,125 @@ export function PlayPage({ progress, sound }) {
     el("span", { className: "thinking-label", text: "Bilgisayar düşünüyor" })
   ]);
   const reportHost = el("div", { className: "report-host" });
+
+  /* --- Saat Durumu --- */
+
+  let rootEl = null;
+  let timeControl = TIME_CONTROLS[0];
+  let customMinutes = 5;
+  let customIncrement = 0;
+  const clock = { w: 0, b: 0 };
+  let clockSide = null;
+  let clockRunning = false;
+  let clockSince = 0;
+  let timerId = null;
+  const lowWarned = { w: false, b: false };
+
+  function timed() {
+    return timeControl.base > 0;
+  }
+
+  function remaining(color) {
+    let left = clock[color];
+    if (clockRunning && clockSide === color) left -= Date.now() - clockSince;
+    return Math.max(0, left);
+  }
+
+  function holdClock() {
+    if (clockRunning && clockSide) {
+      clock[clockSide] = Math.max(0, clock[clockSide] - (Date.now() - clockSince));
+    }
+    clockRunning = false;
+  }
+
+  function passClock(color) {
+    holdClock();
+    clockSide = color;
+    clockSince = Date.now();
+    clockRunning = true;
+    paintClocks();
+  }
+
+  function pressClock(mover) {
+    if (!timed()) return;
+    holdClock();
+    clock[mover] += timeControl.increment * 1000;
+    passClock(mover === "w" ? "b" : "w");
+  }
+
+  function resetClocks() {
+    if (timerId) clearInterval(timerId);
+    clock.w = timeControl.base * 1000;
+    clock.b = timeControl.base * 1000;
+    clockSide = null;
+    clockRunning = false;
+    lowWarned.w = false;
+    lowWarned.b = false;
+    paintClocks();
+  }
+
+  function startTicking() {
+    if (timerId) clearInterval(timerId);
+    if (!timed()) return;
+    timerId = setInterval(() => {
+      if (rootEl && !rootEl.isConnected) {
+        clearInterval(timerId);
+        return;
+      }
+      paintClocks();
+      if (clockRunning && clockSide && remaining(clockSide) <= 0) {
+        flagFall(clockSide);
+      }
+    }, 100);
+  }
+
+  function flagFall(color) {
+    holdClock();
+    clock[color] = 0;
+    paintClocks();
+    board.setInteractive(false);
+
+    const isPlayer = color === game.playerColor;
+    const msg = isPlayer
+      ? "Süre bitti! Zamanın tükendi."
+      : "Süre bitti! Bilgisayarın zamanı tükendi, oyunu kazandın!";
+    statusLine.textContent = msg;
+    say(msg);
+
+    if (!resultRecorded) {
+      resultRecorded = true;
+      const outcome = isPlayer ? "lost" : "won";
+      progress.finishGame(outcome);
+      sound.play(outcome === "won" ? "badge" : "error");
+      if (outcome === "won") burst(statusLine);
+    }
+    showReport({ over: true, reason: msg, winner: isPlayer ? game.engineColor : game.playerColor });
+  }
+
+  function paintClocks() {
+    const show = timed();
+    engineClockView.hidden = !show;
+    playerClockView.hidden = !show;
+    if (!show) return;
+
+    const playerLeft = remaining(game.playerColor);
+    const engineLeft = remaining(game.engineColor);
+
+    playerClockView.textContent = clockText(playerLeft);
+    playerClockView.classList.toggle("running", clockRunning && clockSide === game.playerColor);
+    playerClockView.classList.toggle("low", playerLeft <= 60000 && playerLeft > 10000);
+    playerClockView.classList.toggle("critical", playerLeft <= 10000);
+
+    engineClockView.textContent = clockText(engineLeft);
+    engineClockView.classList.toggle("running", clockRunning && clockSide === game.engineColor);
+    engineClockView.classList.toggle("low", engineLeft <= 60000 && engineLeft > 10000);
+    engineClockView.classList.toggle("critical", engineLeft <= 10000);
+
+    if (playerLeft <= 10000 && clockRunning && clockSide === game.playerColor && !lowWarned[game.playerColor]) {
+      lowWarned[game.playerColor] = true;
+      sound.play("error");
+    }
+  }
 
   const board = ChessBoard({
     chess: game.chess,
@@ -80,7 +225,11 @@ export function PlayPage({ progress, sound }) {
     say(result.report.advice);
     refresh();
 
-    if (await checkGameOver()) return;
+    if (await checkGameOver()) {
+      holdClock();
+      return;
+    }
+    pressClock(game.playerColor);
     await runEngine();
   }
 
@@ -100,7 +249,11 @@ export function PlayPage({ progress, sound }) {
     }
 
     refresh();
-    if (await checkGameOver()) return;
+    if (await checkGameOver()) {
+      holdClock();
+      return;
+    }
+    pressClock(game.engineColor);
     board.setInteractive(true);
   }
 
@@ -109,6 +262,7 @@ export function PlayPage({ progress, sound }) {
     const status = game.status();
     if (!status.over) return false;
 
+    holdClock();
     board.setInteractive(false);
     statusLine.textContent = status.reason;
     say(status.reason);
@@ -174,6 +328,12 @@ export function PlayPage({ progress, sound }) {
     board.setInteractive(true);
     say("Yeni oyun başladı. Merkezi kontrol etmeyi ve taşlarını geliştirmeyi unutma!");
     refresh();
+
+    resetClocks();
+    if (timed()) {
+      passClock("w");
+      startTicking();
+    }
 
     // Oyuncu siyahsa bilgisayar başlar.
     if (playerColor === "b") await runEngine();
@@ -304,6 +464,10 @@ export function PlayPage({ progress, sound }) {
       while (moveList.children.length > game.chess.getHistory().length) moveList.lastChild.remove();
       board.update(game.lastMove);
       board.setInteractive(true);
+      if (timed()) {
+        holdClock();
+        passClock(game.playerColor);
+      }
       say("Hamleyi geri aldık. Bu sefer daha dikkatli bak!");
       refresh();
     }),
@@ -330,17 +494,220 @@ export function PlayPage({ progress, sound }) {
   const focusButton = focusToggle(sound);
 
   /* ---------------------------------------------------------------- *
-   * Katlanabilir ayarlar (seviye + renk)
-   *
-   * Oyun başladıktan sonra bunlara nadiren dokunulur; bu yüzden varsayılan
-   * olarak kapalıdır ve panelin yüksekliğini şişirmez.
+   * Katlanabilir ayarlar (seviye + renk + süre)
    * ---------------------------------------------------------------- */
+
+  const timeNote = el("p", { className: "play-time-note" });
+
+  function timeHint() {
+    if (!timed()) return "Saat kapalı: istediğin kadar düşünebilirsin.";
+    const mins = Math.floor(timeControl.base / 60);
+    const secs = timeControl.base % 60;
+    const baseStr = secs > 0 ? `${mins} dk ${secs} sn` : `${mins} dakika`;
+    const base = `Her iki tarafa ${baseStr}. Süresi biten oyunu kaybeder.`;
+    return timeControl.increment > 0
+      ? `${base} Her hamleden sonra saate ${timeControl.increment} saniye eklenir.`
+      : base;
+  }
+
+  const minutesInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "1",
+    max: "180",
+    value: String(customMinutes),
+    "aria-label": "Süre dakika",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        customMinutes = Math.min(180, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const incrementInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "0",
+    max: "60",
+    value: String(customIncrement),
+    "aria-label": "Ekleme saniye",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        customIncrement = Math.min(60, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const minuteChips = [1, 3, 5, 7, 10, 15, 20, 30].map((m) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `${m} dk`,
+      onClick: () => {
+        sound.play("click");
+        setCustomMinutes(m);
+      }
+    })
+  );
+
+  const incrementChips = [0, 1, 2, 5, 10].map((s) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `+${s} sn`,
+      onClick: () => {
+        sound.play("click");
+        setCustomIncrement(s);
+      }
+    })
+  );
+
+  function updateCustomInputs() {
+    minutesInput.value = String(customMinutes);
+    incrementInput.value = String(customIncrement);
+    minuteChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [1, 3, 5, 7, 10, 15, 20, 30][i] === customMinutes);
+    });
+    incrementChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [0, 1, 2, 5, 10][i] === customIncrement);
+    });
+  }
+
+  const customTimeBox = el("div", { className: "duel-custom-time", hidden: "" }, [
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⏱ Ana Süre" }),
+        el("span", { className: "custom-time-unit", text: "dakika" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 dakika azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes - 1);
+          }
+        }),
+        minutesInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 dakika artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, minuteChips)
+    ]),
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⚡ Hamle Başına Ekleme" }),
+        el("span", { className: "custom-time-unit", text: "saniye" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 saniye azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement - 1);
+          }
+        }),
+        incrementInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 saniye artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, incrementChips)
+    ])
+  ]);
+
+  function applyCustomTime() {
+    timeControl = {
+      id: "ozel",
+      label: "Özel",
+      detail: `${customMinutes} dk`,
+      base: Math.max(1, customMinutes) * 60,
+      increment: Math.max(0, customIncrement)
+    };
+    for (const button of timeButtonsContainer.children) {
+      button.classList.toggle("active", button.dataset.time === "ozel");
+    }
+    customTimeBox.hidden = false;
+    updateCustomInputs();
+    startNewGame();
+    timeNote.textContent = timeHint();
+  }
+
+  function setCustomMinutes(val) {
+    customMinutes = Math.min(180, Math.max(1, Number(val) || 1));
+    applyCustomTime();
+  }
+
+  function setCustomIncrement(val) {
+    customIncrement = Math.min(60, Math.max(0, Number(val) || 0));
+    applyCustomTime();
+  }
+
+  const timeButtonsContainer = el("div", { className: "segmented play-times" });
+
+  const timeButtons = TIME_CONTROLS.map((option) =>
+    el("button", {
+      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+      type: "button",
+      "data-time": option.id,
+      title: `${option.label} — ${option.detail}`,
+      onClick: (event) => {
+        sound.play("click");
+        if (option.id === "ozel") {
+          applyCustomTime();
+        } else {
+          timeControl = option;
+          customTimeBox.hidden = true;
+          if (option.base > 0) {
+            customMinutes = Math.floor(option.base / 60);
+            customIncrement = option.increment;
+            updateCustomInputs();
+          }
+          for (const button of timeButtonsContainer.children) {
+            button.classList.toggle("active", button.dataset.time === option.id);
+          }
+          startNewGame();
+          timeNote.textContent = timeHint();
+        }
+      }
+    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
+  );
+  timeButtonsContainer.append(...timeButtons);
+  timeNote.textContent = timeHint();
 
   const settingsBody = el("div", { className: "play-settings-body" }, [
     el("label", { className: "panel-label", text: "Zorluk" }),
     el("div", { className: "segmented" }, levelButtons),
     el("label", { className: "panel-label", text: "Rengin" }),
-    el("div", { className: "segmented" }, colorButtons)
+    el("div", { className: "segmented" }, colorButtons),
+    el("label", { className: "panel-label", text: "Satranç saati" }),
+    timeButtonsContainer,
+    customTimeBox,
+    timeNote
   ]);
 
   const settingsBox = el("details", { className: "play-settings" }, [
@@ -351,15 +718,15 @@ export function PlayPage({ progress, sound }) {
   refresh();
 
   // Oyun ekranında başlık kompakt: dikey alan tahtaya gitsin.
-  return pageShell(
+  rootEl = pageShell(
     "Bilgisayara Karşı Oyna",
     "Gerçek satranç kurallarıyla oyna.",
     [
       el("section", { className: "play-layout" }, [
         el("div", { className: "play-board" }, [
-          capturedByEngine,
+          engineRow,
           board.element,
-          capturedByPlayer,
+          playerRow,
           thinkingBar
         ]),
         el("aside", { className: "play-panel" }, [
@@ -374,4 +741,6 @@ export function PlayPage({ progress, sound }) {
     ],
     { compact: true }
   );
+
+  return rootEl;
 }

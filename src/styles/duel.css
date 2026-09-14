@@ -459,21 +459,144 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 
 /* --- Kurulum: satranç saati seçimi --- */
 
-/* Dört tempo dar panele sığsın diye başlık ve açıklama alt alta gelir. */
+/* Beş tempo (özel süre dahil) dar panele sığsın diye başlık ve açıklama alt alta gelir. */
 .duel-times .seg-button {
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   gap: 0.05rem;
   min-height: 2.4rem;
-  padding: 0.3rem 0.3rem;
+  padding: 0.3rem 0.2rem;
   text-align: center;
 }
 
-.duel-times .seg-button strong { font-size: 0.78rem; }
-.duel-times .seg-button small { font-size: 0.6rem; line-height: 1.2; font-weight: 700; }
+.duel-times .seg-button strong { font-size: 0.76rem; }
+.duel-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
+
+/* Özel süre ayar kutusu */
+.duel-custom-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.6rem;
+  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 0.75rem;
+}
+
+.duel-custom-time[hidden] {
+  display: none;
+}
+
+.custom-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.custom-time-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.custom-time-unit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.custom-time-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.custom-time-btn {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+  border-radius: 0.55rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.custom-time-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.custom-time-btn:active {
+  transform: scale(0.92);
+}
+
+.custom-time-input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  border: 1.5px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.custom-time-input:focus {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-soft);
+}
+
+.custom-time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.custom-chip {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.custom-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.custom-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 800;
+}
 
 .duel-time-note {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   line-height: 1.35;
   color: var(--muted);
   font-weight: 700;

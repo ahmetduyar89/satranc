@@ -59,7 +59,8 @@ const TIME_CONTROLS = [
   { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
   { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
   { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 }
+  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
 ];
 
 /** Maç puanını satranç geleneğine göre yazar: 0.5 → "½", 1.5 → "1½". */
@@ -78,7 +79,13 @@ function clockText(ms) {
   if (ms <= 0) return "0:00";
   if (ms < 10000) return (Math.ceil(ms / 100) / 10).toFixed(1);
   const total = Math.ceil(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  const hours = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+  return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
 /** Standart başlangıç dizilişini kare → taş kodu haritası olarak verir. */
@@ -1028,16 +1035,181 @@ export function DuelPage({ sound }) {
 
   /* --- Kurulum: satranç saati seçimi --- */
 
+  let customMinutes = 3;
+  let customIncrement = 2;
+
   const timeNote = el("p", { className: "duel-time-note" });
 
   /** Seçili temponun ne anlama geldiğini çocuk diliyle anlatır. */
   function timeHint() {
     if (!timed()) return "Saat kapalı: iki oyuncu da istediği kadar düşünebilir.";
-    const base = `Her oyuncuya ${timeControl.base / 60} dakika. Süresi biten oyunu kaybeder.`;
+    const mins = Math.floor(timeControl.base / 60);
+    const secs = timeControl.base % 60;
+    const baseStr = secs > 0 ? `${mins} dk ${secs} sn` : `${mins} dakika`;
+    const base = `Her oyuncuya ${baseStr}. Süresi biten oyunu kaybeder.`;
     return timeControl.increment > 0
       ? `${base} Her hamleden sonra saatine ${timeControl.increment} saniye eklenir.`
       : base;
   }
+
+  const minutesInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "1",
+    max: "180",
+    value: String(customMinutes),
+    "aria-label": "Süre dakika",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        customMinutes = Math.min(180, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const incrementInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "0",
+    max: "60",
+    value: String(customIncrement),
+    "aria-label": "Ekleme saniye",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        customIncrement = Math.min(60, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const minuteChips = [1, 3, 5, 7, 10, 15, 20, 30].map((m) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `${m} dk`,
+      onClick: () => {
+        sound.play("click");
+        setCustomMinutes(m);
+      }
+    })
+  );
+
+  const incrementChips = [0, 1, 2, 5, 10].map((s) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `+${s} sn`,
+      onClick: () => {
+        sound.play("click");
+        setCustomIncrement(s);
+      }
+    })
+  );
+
+  function updateCustomInputs() {
+    minutesInput.value = String(customMinutes);
+    incrementInput.value = String(customIncrement);
+    minuteChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [1, 3, 5, 7, 10, 15, 20, 30][i] === customMinutes);
+    });
+    incrementChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [0, 1, 2, 5, 10][i] === customIncrement);
+    });
+  }
+
+  const customTimeBox = el("div", { className: "duel-custom-time", hidden: "" }, [
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⏱ Ana Süre" }),
+        el("span", { className: "custom-time-unit", text: "dakika" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 dakika azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes - 1);
+          }
+        }),
+        minutesInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 dakika artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, minuteChips)
+    ]),
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⚡ Hamle Başına Ekleme" }),
+        el("span", { className: "custom-time-unit", text: "saniye" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 saniye azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement - 1);
+          }
+        }),
+        incrementInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 saniye artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, incrementChips)
+    ])
+  ]);
+
+  function applyCustomTime() {
+    timeControl = {
+      id: "ozel",
+      label: "Özel",
+      detail: `${customMinutes} dk`,
+      base: Math.max(1, customMinutes) * 60,
+      increment: Math.max(0, customIncrement)
+    };
+    for (const button of timeButtonsContainer.children) {
+      button.classList.toggle("active", button.dataset.time === "ozel");
+    }
+    customTimeBox.hidden = false;
+    updateCustomInputs();
+    resetClocks();
+    timeNote.textContent = timeHint();
+  }
+
+  function setCustomMinutes(val) {
+    customMinutes = Math.min(180, Math.max(1, Number(val) || 1));
+    applyCustomTime();
+  }
+
+  function setCustomIncrement(val) {
+    customIncrement = Math.min(60, Math.max(0, Number(val) || 0));
+    applyCustomTime();
+  }
+
+  const timeButtonsContainer = el("div", { className: "segmented duel-times" });
 
   const timeButtons = TIME_CONTROLS.map((option) =>
     el("button", {
@@ -1046,16 +1218,27 @@ export function DuelPage({ sound }) {
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
-        timeControl = option;
         sound.play("click");
-        for (const button of event.currentTarget.parentElement.children) {
-          button.classList.toggle("active", button.dataset.time === option.id);
+        if (option.id === "ozel") {
+          applyCustomTime();
+        } else {
+          timeControl = option;
+          customTimeBox.hidden = true;
+          if (option.base > 0) {
+            customMinutes = Math.floor(option.base / 60);
+            customIncrement = option.increment;
+            updateCustomInputs();
+          }
+          for (const button of timeButtonsContainer.children) {
+            button.classList.toggle("active", button.dataset.time === option.id);
+          }
+          resetClocks();
+          timeNote.textContent = timeHint();
         }
-        resetClocks();
-        timeNote.textContent = timeHint();
       }
     }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
   );
+  timeButtonsContainer.append(...timeButtons);
 
   timeNote.textContent = timeHint();
 
@@ -1104,7 +1287,8 @@ export function DuelPage({ sound }) {
     el("label", { className: "panel-label", text: "Kim başlıyor?" }),
     el("div", { className: "segmented" }, turnButtons),
     el("label", { className: "panel-label", text: "Satranç saati" }),
-    el("div", { className: "segmented duel-times" }, timeButtons),
+    timeButtonsContainer,
+    customTimeBox,
     timeNote,
     el("label", { className: "panel-label", text: "Oyuncular" }),
     el("div", { className: "duel-names" }, [nameInput("w"), nameInput("b")]),

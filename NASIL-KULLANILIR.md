@@ -45,8 +45,9 @@ Sol menüdeki **İki Kişilik Oyun** bölümü sınıf içi karşılaşmalar iç
    *Tek Tahta* (iki oyuncu aynı tahtayı paylaşır).
 2. Tahta **boş** gelir. Paletten taş seçip kareye dokunarak taşları
    öğrenciler dizer. Hazır kuruluş için **Standart Diziliş** düğmesi vardır.
-3. **Satranç saati** seç: *Süresiz*, *5 dk*, *10 dk* ya da *15+10* (15 dakika
-   süre, her hamleden sonra 10 saniye ekleme — turnuvalardaki tempo).
+3. **Satranç saati** seç: *Süresiz*, *5 dk*, *10 dk*, *15+10* ya da **Özel**
+   (istediğin süreyi dakika olarak belirleyebilir, istersen hamle başına ekleme
+   saniyesi de ekleyebilirsin).
 4. Oyuncu adlarını yaz, kimin başlayacağını seç ve **Oyunu Başlat**'a bas.
 5. İki tahta düzeninde birinde yapılan hamle diğerinde anında görünür;
    sırası gelen oyuncunun tahtası yeşil çerçeveyle belirginleşir.

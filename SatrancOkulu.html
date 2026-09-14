@@ -13,9 +13,9 @@
   Bu dosya kendi kendine yeter: internet, sunucu ve kurulum gerektirmez.
   USB belleğe kopyalayıp herhangi bir bilgisayarda ÇİFT TIKLAYARAK açabilirsin.
 
-  Otomatik üretilmiştir (tools/build-tek-dosya.mjs). Elle düzenlemeyin;
+  Otomatik üretilmiştir (tools/build-tek-dosya.py). Elle düzenlemeyin;
   değişiklikleri src/ altında yapıp aracı yeniden çalıştırın.
-  Üretim tarihi: 2026-09-10
+  Üretim tarihi: 2026-09-14
 -->
 <style>
 /* ===== src/styles/base.css ===== */
@@ -1142,6 +1142,130 @@ body.focus-mode .page-hero { display: none; }
   --pc-detail: rgba(255, 255, 255, 0.5);
 }
 
+/* ------------------------------------------------------------------ *
+ * Özel Süre Ayarları (Ortak Bileşen)
+ * ------------------------------------------------------------------ */
+
+.duel-custom-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.6rem;
+  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 0.75rem;
+}
+
+.duel-custom-time[hidden] {
+  display: none;
+}
+
+.custom-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.custom-time-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.custom-time-unit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.custom-time-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.custom-time-btn {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+  border-radius: 0.55rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.custom-time-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.custom-time-btn:active {
+  transform: scale(0.92);
+}
+
+.custom-time-input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  border: 1.5px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.custom-time-input:focus {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-soft);
+}
+
+.custom-time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.custom-chip {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.custom-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.custom-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 800;
+}
+
 
 /* ===== src/styles/board.css ===== */
 .board-stage {
@@ -1752,6 +1876,54 @@ body.focus-mode .page-hero { display: none; }
 
 .captured-empty { color: var(--muted); opacity: 0.6; }
 
+.play-board-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.play-board-row .captured-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.play-clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.play-clock[hidden] {
+  display: none;
+}
+
+.play-clock.running {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.play-clock.low {
+  border-color: var(--sun-dark);
+  background: var(--sun-soft);
+  color: var(--sun-dark);
+}
+
+.play-clock.critical {
+  border-color: var(--coral-dark);
+  background: var(--coral);
+  color: #fff;
+  animation: clock-pulse 1s ease-in-out infinite;
+}
+
 /* --- "Düşünüyor" göstergesi --- */
 
 .thinking-bar {
@@ -2138,6 +2310,27 @@ body.focus-mode .play-board .cb-stage {
 .play-settings .seg-button { padding: 0.35rem 0.25rem; }
 .play-settings .seg-button strong { font-size: 0.78rem; }
 .play-settings .seg-button small { font-size: 0.72rem; }
+
+.play-times .seg-button {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-height: 2.3rem;
+  padding: 0.3rem 0.2rem;
+  text-align: center;
+}
+
+.play-times .seg-button strong { font-size: 0.74rem; }
+.play-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
+
+.play-time-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+  font-weight: 700;
+}
 
 /* --- Daha sıkı durum ve öğretmen kutusu --- */
 
@@ -2634,21 +2827,144 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 
 /* --- Kurulum: satranç saati seçimi --- */
 
-/* Dört tempo dar panele sığsın diye başlık ve açıklama alt alta gelir. */
+/* Beş tempo (özel süre dahil) dar panele sığsın diye başlık ve açıklama alt alta gelir. */
 .duel-times .seg-button {
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   gap: 0.05rem;
   min-height: 2.4rem;
-  padding: 0.3rem 0.3rem;
+  padding: 0.3rem 0.2rem;
   text-align: center;
 }
 
-.duel-times .seg-button strong { font-size: 0.78rem; }
-.duel-times .seg-button small { font-size: 0.6rem; line-height: 1.2; font-weight: 700; }
+.duel-times .seg-button strong { font-size: 0.76rem; }
+.duel-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
+
+/* Özel süre ayar kutusu */
+.duel-custom-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.6rem;
+  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 0.75rem;
+}
+
+.duel-custom-time[hidden] {
+  display: none;
+}
+
+.custom-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.custom-time-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.custom-time-unit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.custom-time-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.custom-time-btn {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+  border-radius: 0.55rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.custom-time-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.custom-time-btn:active {
+  transform: scale(0.92);
+}
+
+.custom-time-input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  border: 1.5px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.custom-time-input:focus {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-soft);
+}
+
+.custom-time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.custom-chip {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.custom-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.custom-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 800;
+}
 
 .duel-time-note {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   line-height: 1.35;
   color: var(--muted);
   font-weight: 700;
@@ -3056,7 +3372,7 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 
 /* --- Taşı Yerine Sürükle / Hafıza --- */
 
-.target-prompt, .memory-prompt {
+.target-prompt, .memory-prompt, .army-prompt, .state-prompt, .free-prompt {
   margin: 0 0 0.4rem;
   text-align: center;
   font-size: 0.92rem;
@@ -3098,11 +3414,109 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 .match-card.matched { opacity: 0.75; cursor: default; transform: none; }
 .match-card.shake { animation: cb-shake-key 240ms ease-in-out 2; }
 
+/* --- Kaşif At --- */
+
+.quest-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.quest-chip {
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(47, 143, 131, 0.12);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.quest-chip.moves.low {
+  background: rgba(214, 69, 69, 0.14);
+  border-color: rgba(214, 69, 69, 0.4);
+  animation: cb-pop 260ms ease-out;
+}
+
+/* Toplanacak yıldızlar: hedef karenin halkasının ortasına konur. */
+.knight-quest .cb-square.goal::after {
+  content: "⭐";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  pointer-events: none;
+  animation: cb-pop 320ms ease-out;
+}
+
+/* --- Şah mı, Mat mı, Pat mı? --- */
+
+.state-quiz .quiz-options { margin-top: 0.7rem; }
+.state-quiz .quiz-option { font-size: 1rem; font-weight: 800; padding: 0.7rem 0.5rem; }
+
+/* --- Ordunu Diz --- */
+
+.army-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  background: rgba(47, 143, 131, 0.08);
+  border: 1px solid var(--line);
+  min-height: 4.6rem;
+}
+
+.army-piece {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.8rem;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms ease;
+}
+
+.army-piece:hover { transform: translateY(-3px); }
+
+.army-piece.selected {
+  border-color: var(--primary);
+  background: rgba(255, 184, 77, 0.22);
+  transform: translateY(-4px) scale(1.04);
+}
+
+.army-piece-glyph { display: block; width: 2.4rem; height: 2.4rem; }
+.army-piece-glyph svg { width: 100%; height: 100%; }
+
+.army-piece-name { font-size: 0.68rem; font-weight: 800; color: var(--muted); }
+
+.army-piece-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 999px;
+  padding: 0.05rem 0.35rem;
+}
+
 @media (max-width: 560px) {
   .mini-game { padding: 0.8rem; }
   .mini-stat strong { font-size: 1.2rem; }
   .match-board { grid-template-columns: 1fr; }
   .quiz-symbol { font-size: 4rem; }
+  .army-piece-glyph { width: 1.9rem; height: 1.9rem; }
+  .army-piece { padding: 0.25rem 0.35rem; }
 }
 
 
@@ -45636,11 +46050,886 @@ function createMatchMoves() {
   Object.defineProperty(__d, "createMatchMoves", { get: () => createMatchMoves, enumerable: true });
 },
 
+"src/games/ArmySetup.js": function (__d) {
+/**
+ * ArmySetup.js — "Ordunu Diz"
+ *
+ * Boş tahtaya bir ordunun arka sırası dizilir. Çocuk aşağıdaki taş rafından
+ * bir taş seçer ve onu ait olduğu kareye koyar. Yanlış kareye konursa taş rafa
+ * geri döner ve KURALI söyleyen bir ipucu verilir — ilkokul çağında en çok
+ * karıştırılan iki şey ("vezir kendi rengine", "at kalenin yanında") böylece
+ * ezberle değil, hatayı düzelterek öğrenilir.
+ *
+ * Tur ilerledikçe destek kaldırılır:
+ *   1-2. tur  piyonlar tahtada + boş evler işaretli   (kolay)
+ *   3-4. tur  piyon yok, işaret yok                   (orta)
+ *   5-6. tur  koordinatlar da kapalı                  (zor)
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { Chess, PIECE_NAMES_TR } = __yukle("src/engine/Chess.js");
+const { ChessBoard } = __yukle("src/components/ChessBoard.js");
+const { pieceHTML } = __yukle("src/components/PieceGlyph.js");
+const FILES = "abcdefgh".split("");
+const EMPTY = "8/8/8/8/8/8/8/8 w - - 0 1";
+
+/** Başlangıç dizilişinde her sütunun sahibi. Her iki renk için de aynıdır. */
+const HOME = { a: "r", b: "n", c: "b", d: "q", e: "k", f: "b", g: "n", h: "r" };
+
+/** Rafta soldan sağa duracak sıra — aynı taşlar yan yana gelsin diye. */
+const TRAY_ORDER = ["r", "n", "b", "q", "k"];
+
+/** Diziyi karıştırır. */
+const shuffle = (list) => [...list].sort(() => Math.random() - 0.5);
+
+/** "kale" → "Kale". Motorun taş adları küçük harflidir; etiket ve cümle başında büyük yazılır. */
+const capitalize = (word) => word.charAt(0).toLocaleUpperCase("tr") + word.slice(1);
+
+/**
+ * Yanlış yerleştirmede söylenecek kural cümlesi.
+ * Kareyi doğrudan söylemek yerine KURALI hatırlatır; çocuk kareyi kendi bulur.
+ */
+function hintFor(type, backRank) {
+  switch (type) {
+    case "r": return `Kaleler tahtanın iki köşesinde durur: a${backRank} ve h${backRank}.`;
+    case "n": return `Atlar kalelerin hemen yanında durur: b${backRank} ve g${backRank}.`;
+    case "b": return `Filler atların yanında, şah ile vezirin komşusudur: c${backRank} ve f${backRank}.`;
+    case "q": return backRank === 1
+      ? "Vezir kendi rengindeki kareye oturur: beyaz vezir açık kare olan d1'e."
+      : "Vezir kendi rengindeki kareye oturur: siyah vezir koyu kare olan d8'e.";
+    case "k": return `Şah, vezirin yanındaki kareye oturur: e${backRank}.`;
+    default: return "Bu taş buraya ait değil.";
+  }
+}
+
+function createArmySetup() {
+  let board = null;
+  let host = null;
+  let promptNode = null;
+  let trayNode = null;
+
+  let color = "w";
+  let backRank = 1;
+  let placed = {};      // kare → taş kodu ("wq")
+  let remaining = [];   // rafta bekleyen taş tipleri
+  let selected = null;  // rafta seçili taş tipi
+  let round = 0;
+  let locked = false;   // tur biterken tıklamaları yok sayar
+
+  /** Taş haritasından FEN üretir. */
+  function toFen(pieces) {
+    const rows = [];
+    for (let rank = 8; rank >= 1; rank -= 1) {
+      let row = "";
+      let empty = 0;
+      for (const file of FILES) {
+        const code = pieces[`${file}${rank}`];
+        if (code) {
+          if (empty) row += empty;
+          empty = 0;
+          // Kod "wq" biçimindedir: beyazlar büyük, siyahlar küçük harf.
+          row += code[0] === "w" ? code[1].toUpperCase() : code[1];
+        } else empty += 1;
+      }
+      if (empty) row += empty;
+      rows.push(row);
+    }
+    return `${rows.join("/")} w - - 0 1`;
+  }
+
+  /** Tahtayı mevcut yerleşime göre tazeler. */
+  function drawBoard() {
+    board.attach(new Chess(toFen(placed)));
+    // Kolay turlarda boş evler işaretlenir; bu, "arka sıra" kavramını görünür kılar.
+    const scaffold = round <= 2
+      ? FILES.map((file) => `${file}${backRank}`).filter((square) => !placed[square])
+      : [];
+    board.setMarks(scaffold);
+  }
+
+  /** Taş rafını yeniden çizer. */
+  function drawTray() {
+    const counts = new Map();
+    for (const type of remaining) counts.set(type, (counts.get(type) || 0) + 1);
+
+    const items = TRAY_ORDER.filter((type) => counts.has(type)).map((type) =>
+      el("button", {
+        className: `army-piece ${selected === type ? "selected" : ""}`,
+        type: "button",
+        "aria-label": `${PIECE_NAMES_TR[type]} seç`,
+        "aria-pressed": selected === type ? "true" : "false",
+        onClick: () => {
+          selected = selected === type ? null : type;
+          drawTray();
+        }
+      }, [
+        el("span", { className: "army-piece-glyph", html: pieceHTML(color + type) }),
+        el("span", { className: "army-piece-name", text: capitalize(PIECE_NAMES_TR[type]) }),
+        counts.get(type) > 1
+          ? el("span", { className: "army-piece-count", text: `×${counts.get(type)}` })
+          : null
+      ])
+    );
+
+    trayNode.replaceChildren(...items);
+  }
+
+  /** Bir kareye taş koyma denemesi. */
+  function place(square, api) {
+    if (locked) return;
+
+    if (!selected) {
+      api.say("Önce aşağıdaki raftan bir taş seç, sonra kareye dokun.", "partial");
+      return;
+    }
+    if (placed[square]) {
+      api.say(`${square.toUpperCase()} karesi dolu. Boş bir kare seç.`, "partial");
+      return;
+    }
+
+    const type = selected;
+    const correct = square[1] === String(backRank) && HOME[square[0]] === type;
+
+    if (!correct) {
+      board.shake(square);
+      api.wrong(`${capitalize(PIECE_NAMES_TR[type])} ${square.toUpperCase()} karesine gitmez. ${hintFor(type, backRank)}`);
+      return;
+    }
+
+    placed[square] = color + type;
+    remaining.splice(remaining.indexOf(type), 1);
+    // Aynı taştan kalmadıysa seçim düşer; kalıyorsa (kale, at, fil) seçili kalır
+    // ki çocuk ikinciyi koymak için rafa geri dönmek zorunda kalmasın.
+    if (!remaining.includes(type)) selected = null;
+
+    drawBoard();
+    drawTray();
+
+    if (remaining.length === 0) {
+      locked = true;
+      api.correct(`👑 Ordu hazır! ${color === "w" ? "Beyaz" : "Siyah"} taşların hepsi doğru yerde.`);
+      return;
+    }
+
+    api.sound.play("move");
+    api.say(`Doğru! ${remaining.length} taş kaldı.`, "partial");
+  }
+
+  return {
+    id: "ordunu-diz",
+    title: "Ordunu Diz",
+    description: "Taşları başlangıç karelerine yerleştir. Vezir kendi rengine oturur!",
+    icon: "crown",
+    rounds: 6,
+
+    setup(api) {
+      round = 0;
+      promptNode = el("p", { className: "army-prompt", text: "" });
+      trayNode = el("div", { className: "army-tray" });
+
+      board = ChessBoard({
+        chess: new Chess(EMPTY),
+        interactive: false,
+        coordinates: true,
+        onSquareClick: (square) => place(square, api)
+      });
+
+      host = el("div", { className: "army-setup" }, [promptNode, board.element, trayNode]);
+      api.setStage(host);
+    },
+
+    nextRound(api) {
+      round += 1;
+      locked = false;
+      selected = null;
+      placed = {};
+
+      // Turlar beyaz–siyah diye dönüşür: iki ordunun dizilişi aynadır ve
+      // çocuğun bunu kendi görmesi, ezberden çok daha kalıcıdır.
+      color = round % 2 === 1 ? "w" : "b";
+      backRank = color === "w" ? 1 : 8;
+
+      // Kolay turlarda piyonlar tahtadadır; arka sıra onların önünde kurulur.
+      if (round <= 2) {
+        const pawnRank = color === "w" ? 2 : 7;
+        for (const file of FILES) placed[`${file}${pawnRank}`] = `${color}p`;
+      }
+
+      remaining = shuffle(["r", "n", "b", "q", "k", "b", "n", "r"]);
+
+      drawBoard();
+      drawTray();
+
+      // Son iki turda koordinatlar kapanır: artık kareyi bilerek bulmak gerekir.
+      const hard = round > 4;
+      host.classList.toggle("hide-coords", hard);
+
+      const army = color === "w" ? "Beyaz" : "Siyah";
+      promptNode.textContent = hard
+        ? `Koordinatlar kapalı! ${army} ordunun arka sırasını diz.`
+        : round <= 2
+          ? `Piyonlar yerinde. ${army} ordunun arkasındaki 8 taşı diz.`
+          : `Tahta bomboş. ${army} ordunun arka sırasını hafızandan diz.`;
+
+      api.say("Raftan taş seç, sonra evine dokun!");
+    }
+  };
+}
+
+  Object.defineProperty(__d, "createArmySetup", { get: () => createArmySetup, enumerable: true });
+},
+
+"src/games/CheckOrMate.js": function (__d) {
+/**
+ * CheckOrMate.js — "Şah mı, Mat mı, Pat mı?"
+ *
+ * Tahtada siyahın oynama sırası olan bir konum gösterilir; çocuk üç durumdan
+ * birini seçer. İlkokul çağında en çok karıştırılan üçlü budur: "şah" ile
+ * "şah mat" ayrımı ve özellikle PAT, çünkü pat tahtada mat gibi görünür ama
+ * sonucu berabereliktir.
+ *
+ * Konumlar ÜRETİLİR, hazır listeden gelmez: rastgele bir şah–vezir sonu kurulur,
+ * beyazın bütün hamleleri denenir ve ortaya çıkan konumlar motorun
+ * isCheckmate/isStalemate/inCheck sonuçlarına göre sınıflanır. Böylece her
+ * sorunun cevabı kural motorunun kendisi tarafından garanti edilir.
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { Chess } = __yukle("src/engine/Chess.js");
+const { ChessBoard } = __yukle("src/components/ChessBoard.js");
+const FILES = "abcdefgh".split("");
+
+/** Üç durumun etiketi ve açıklaması. */
+const STATES = {
+  sah: {
+    label: "Şah",
+    explain: "Şah tehdit altında ama kurtulabiliyor. Buna sadece ŞAH denir, oyun devam eder."
+  },
+  mat: {
+    label: "Şah Mat",
+    explain: "Şah tehdit altında ve kurtulamıyor: kaçamıyor, araya taş koyamıyor, saldıranı alamıyor. Bu ŞAH MAT."
+  },
+  pat: {
+    label: "Pat",
+    explain: "Siyahın hiç yasal hamlesi yok ama şahı tehdit altında DEĞİL. Bu PAT, yani berabere."
+  }
+};
+
+/** Üretim tutmazsa kullanılacak, elle doğrulanmış yedek konumlar. */
+const FALLBACK = {
+  sah: "7k/8/6K1/8/8/8/8/7R b - - 0 1",
+  mat: "6k1/6Q1/6K1/8/8/8/8/8 b - - 0 1",
+  pat: "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1"
+};
+
+const randomSquare = () => FILES[Math.floor(Math.random() * 8)] + (Math.floor(Math.random() * 8) + 1);
+
+/** İki kare arasındaki şah mesafesi (en büyük eksen farkı). */
+function distance(a, b) {
+  return Math.max(
+    Math.abs(FILES.indexOf(a[0]) - FILES.indexOf(b[0])),
+    Math.abs(Number(a[1]) - Number(b[1]))
+  );
+}
+
+/** Siyah şahı kenara koyar: mat ve pat konumları kenarda doğar. */
+function edgeSquare() {
+  const file = FILES[Math.floor(Math.random() * 8)];
+  const rank = Math.floor(Math.random() * 8) + 1;
+  // Kareyi en yakın kenara it.
+  return Math.random() < 0.5
+    ? `${Math.random() < 0.5 ? "a" : "h"}${rank}`
+    : `${file}${Math.random() < 0.5 ? 1 : 8}`;
+}
+
+/** Taş haritasından FEN üretir; sıra verilen renktedir. */
+function toFen(pieces, turn) {
+  const rows = [];
+  for (let rank = 8; rank >= 1; rank -= 1) {
+    let row = "";
+    let empty = 0;
+    for (const file of FILES) {
+      const symbol = pieces[`${file}${rank}`];
+      if (symbol) {
+        if (empty) row += empty;
+        empty = 0;
+        row += symbol;
+      } else empty += 1;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} ${turn} - - 0 1`;
+}
+
+/**
+ * İstenen durumu (şah / mat / pat) üreten bir konum arar.
+ *
+ * Rastgele bir konum kurar, beyazın her hamlesini oynar ve sonucu sınıflar.
+ * Aranan sınıf çıkarsa o konumun FEN'i döner — sıra artık siyahtadır.
+ */
+function findPosition(wanted, withRook) {
+  for (let attempt = 0; attempt < 220; attempt += 1) {
+    const blackKing = edgeSquare();
+    const whiteKing = randomSquare();
+    // Şahlar yan yana duramaz; arada en az bir kare olmalı.
+    if (distance(blackKing, whiteKing) < 2) continue;
+
+    const pieces = { [blackKing]: "k", [whiteKing]: "K" };
+
+    const queen = randomSquare();
+    if (pieces[queen]) continue;
+    pieces[queen] = "Q";
+
+    if (withRook) {
+      const rook = randomSquare();
+      if (pieces[rook]) continue;
+      pieces[rook] = "R";
+    }
+
+    let chess;
+    try {
+      chess = new Chess(toFen(pieces, "w"));
+    } catch {
+      continue;
+    }
+    // Sıra beyazdayken siyah şah tehdit altındaysa konum kural dışıdır.
+    if (chess.isKingAttacked("b")) continue;
+
+    // Arama hamleleri kullanılır (SAN üretilmez): tur başına yüzlerce konum
+    // denendiği için ucuz olan yol seçilir.
+    const moves = chess.moves({ verbose: false });
+    // Aranan durumu ilk bulan hamleyi kullanmak konumları tek tip yapardı;
+    // bu yüzden hamleler karıştırılır.
+    for (const move of moves.sort(() => Math.random() - 0.5)) {
+      chess.searchMake(move);
+      const state = chess.isCheckmate() ? "mat" : chess.isStalemate() ? "pat" : chess.inCheck() ? "sah" : null;
+      const fen = chess.fen();
+      chess.searchUndo();
+
+      if (state === wanted) return fen;
+    }
+  }
+  return FALLBACK[wanted];
+}
+
+function createCheckOrMate() {
+  let board = null;
+  let optionsNode = null;
+  let promptNode = null;
+  let answered = false;
+  let round = 0;
+
+  return {
+    id: "sah-mat-pat",
+    title: "Şah mı, Mat mı, Pat mı?",
+    description: "Siyahın durumuna bak ve karar ver. Pat, mat gibi görünür ama beraberedir!",
+    icon: "target",
+    rounds: 10,
+
+    setup(api) {
+      round = 0;
+      promptNode = el("p", { className: "state-prompt", text: "Sıra siyahta. Siyahın durumu nedir?" });
+      optionsNode = el("div", { className: "quiz-options" });
+      board = ChessBoard({
+        chess: new Chess(),
+        interactive: false,
+        coordinates: true
+      });
+      api.setStage(el("div", { className: "state-quiz" }, [promptNode, board.element, optionsNode]));
+    },
+
+    nextRound(api) {
+      round += 1;
+      answered = false;
+
+      // Her tur üç durumdan biri sorulur; sıra rastgeledir ki çocuk
+      // "sırayla geliyor" diye tahmin yürütemesin.
+      const wanted = ["sah", "mat", "pat"][Math.floor(Math.random() * 3)];
+      // Son turlarda tahtaya kale eklenir: konum kalabalıklaşır, karar zorlaşır.
+      const fen = findPosition(wanted, round > 5);
+
+      board.attach(new Chess(fen));
+      // Tehdit altındaki şahın kırmızı halkası ipucu vermesin diye değil —
+      // TAM TERSİNE, çocuk "tehdit var mı?" sorusunu tahtaya bakarak
+      // cevaplasın diye tahta olduğu gibi gösterilir.
+      promptNode.textContent = "Sıra siyahta. Siyahın durumu nedir?";
+
+      optionsNode.replaceChildren(
+        ...["sah", "mat", "pat"].map((key) =>
+          el("button", {
+            className: "quiz-option",
+            type: "button",
+            text: STATES[key].label,
+            onClick: (event) => {
+              if (answered) return;
+              if (key === wanted) {
+                answered = true;
+                event.currentTarget.classList.add("correct");
+                api.correct(`✅ ${STATES[wanted].explain}`);
+              } else {
+                event.currentTarget.classList.add("wrong");
+                event.currentTarget.disabled = true;
+                api.wrong(hintFor(wanted, key));
+              }
+            }
+          })
+        )
+      );
+    }
+  };
+}
+
+/**
+ * Yanlış cevaba, doğruyu söylemeden yön veren ipucu.
+ * Çocuğun bakması gereken YERİ gösterir: önce tehdit, sonra kaçış.
+ */
+function hintFor(wanted, guessed) {
+  if (guessed === "pat") return "Şaha iyi bak: tehdit altında mı? Patta şah TEHDİT ALTINDA DEĞİLDİR.";
+  if (wanted === "pat") return "Şah tehdit altında mı? Değilse bu şah da mat da olamaz. Siyahın hiç hamlesi var mı, say.";
+  if (guessed === "mat") return "Şah kaçabiliyor ya da tehdit engellenebiliyor mu? Bir tek kurtuluş varsa bu mat değildir.";
+  return "Şahın gidebileceği tüm kareleri tek tek dene. Hiçbiri yoksa ve tehdit kaldırılamıyorsa bu mattır.";
+}
+
+  Object.defineProperty(__d, "createCheckOrMate", { get: () => createCheckOrMate, enumerable: true });
+},
+
+"src/games/KnightQuest.js": function (__d) {
+/**
+ * KnightQuest.js — "Kaşif At"
+ *
+ * Tahtaya yıldızlar serpilir; at sınırlı sayıda hamleyle hepsini toplamalıdır.
+ * Oyun iki şeyi aynı anda çalıştırır: atın "L" hareketi ve YOL PLANLAMA — hangi
+ * yıldıza önce gitmek gerektiğini düşünmeden hamle hakkı biter.
+ *
+ * Hamle hakkı rastgele verilmez: her turda yıldızlar arasında en yakın komşu
+ * turu hesaplanır (at mesafeleri genişlik-önce arama ile bulunur) ve buna iki
+ * hamle pay eklenir. Yani her tur ÇÖZÜLEBİLİR, ama savurgan bir rota yetmez.
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { Chess } = __yukle("src/engine/Chess.js");
+const { ChessBoard } = __yukle("src/components/ChessBoard.js");
+const FILES = "abcdefgh".split("");
+const EMPTY = "8/8/8/8/8/8/8/8 w - - 0 1";
+
+/** Atın sekiz sıçraması. */
+const JUMPS = [
+  [1, 2], [2, 1], [2, -1], [1, -2],
+  [-1, -2], [-2, -1], [-2, 1], [-1, 2]
+];
+
+const randomSquare = () => FILES[Math.floor(Math.random() * 8)] + (Math.floor(Math.random() * 8) + 1);
+
+/** Bir kareden atın gidebileceği kareler. */
+function knightMoves(square) {
+  const file = FILES.indexOf(square[0]);
+  const rank = Number(square[1]) - 1;
+  const result = [];
+  for (const [df, dr] of JUMPS) {
+    const nf = file + df;
+    const nr = rank + dr;
+    if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+    result.push(`${FILES[nf]}${nr + 1}`);
+  }
+  return result;
+}
+
+/** İki kare arasında atın en az kaç hamlede gittiği (genişlik-önce arama). */
+function knightDistance(from, to) {
+  if (from === to) return 0;
+  const seen = new Set([from]);
+  let frontier = [from];
+  let depth = 0;
+  while (frontier.length) {
+    depth += 1;
+    const next = [];
+    for (const square of frontier) {
+      for (const step of knightMoves(square)) {
+        if (seen.has(step)) continue;
+        if (step === to) return depth;
+        seen.add(step);
+        next.push(step);
+      }
+    }
+    frontier = next;
+  }
+  return 99;
+}
+
+/** En yakın yıldıza gitmeyi sürdüren basit turun uzunluğu. */
+function tourLength(start, stars) {
+  let at = start;
+  let left = [...stars];
+  let total = 0;
+  while (left.length) {
+    let best = left[0];
+    let bestDistance = knightDistance(at, best);
+    for (const star of left.slice(1)) {
+      const distance = knightDistance(at, star);
+      if (distance < bestDistance) {
+        best = star;
+        bestDistance = distance;
+      }
+    }
+    total += bestDistance;
+    at = best;
+    left = left.filter((square) => square !== best);
+  }
+  return total;
+}
+
+/** Tek atlı bir konumun FEN'i. */
+function fenWithKnight(square) {
+  const rows = [];
+  for (let rank = 8; rank >= 1; rank -= 1) {
+    let row = "";
+    let empty = 0;
+    for (const file of FILES) {
+      if (`${file}${rank}` === square) {
+        if (empty) row += empty;
+        empty = 0;
+        row += "N";
+      } else empty += 1;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} w - - 0 1`;
+}
+
+function createKnightQuest() {
+  let board = null;
+  let chess = null;
+  let promptNode = null;
+
+  let knight = null;
+  let stars = [];
+  let movesLeft = 0;
+  let locked = false;
+  let round = 0;
+
+  /** Üstteki sayaç satırını tazeler. */
+  function refresh() {
+    promptNode.replaceChildren(
+      el("span", { className: "quest-chip stars", text: `⭐ Kalan yıldız: ${stars.length}` }),
+      el("span", { className: `quest-chip moves ${movesLeft <= 2 ? "low" : ""}`, text: `🐴 Kalan hamle: ${movesLeft}` })
+    );
+  }
+
+  /** Ata dokunulan kareye sıçratmayı dener. */
+  function jump(square, api) {
+    if (locked) return;
+
+    if (!knightMoves(knight).includes(square)) {
+      board.shake(square);
+      api.wrong("At oraya sıçrayamaz. At L çizer: iki kare düz, sonra bir kare yana.");
+      return;
+    }
+
+    const from = knight;
+    knight = square;
+    movesLeft -= 1;
+
+    // Aynı Chess örneği yeniden yüklenir; böylece tahta atı L yolu boyunca uçurur.
+    chess.load(fenWithKnight(knight));
+    board.update({ from, to: knight });
+
+    const collected = stars.includes(knight);
+    if (collected) stars = stars.filter((star) => star !== knight);
+    board.setMarks(stars);
+    refresh();
+
+    if (stars.length === 0) {
+      locked = true;
+      api.correct(`⭐ Hepsini topladın! ${movesLeft} hamlen daha vardı.`);
+      return;
+    }
+
+    if (movesLeft === 0) {
+      locked = true;
+      api.wrong(`Hamle hakkın bitti, ${stars.length} yıldız kaldı. En yakın yıldızdan başlamayı dene!`, { skip: true });
+      return;
+    }
+
+    if (collected) {
+      api.sound.play("success");
+      api.say(`Yıldız senin! ${stars.length} yıldız kaldı.`, "partial");
+    } else {
+      api.sound.play("move");
+      api.say(`${movesLeft} hamlen kaldı.`, "partial");
+    }
+  }
+
+  return {
+    id: "kasif-at",
+    title: "Kaşif At",
+    description: "Atı sıçrata sıçrata bütün yıldızları topla. Hamle hakkın sayılı!",
+    icon: "knight",
+    rounds: 6,
+
+    setup(api) {
+      round = 0;
+      promptNode = el("div", { className: "quest-bar" });
+      chess = new Chess(EMPTY);
+      board = ChessBoard({
+        chess,
+        interactive: false,
+        coordinates: true,
+        onSquareClick: (square) => jump(square, api)
+      });
+      api.setStage(el("div", { className: "knight-quest" }, [promptNode, board.element]));
+    },
+
+    nextRound(api) {
+      round += 1;
+      locked = false;
+
+      // Tur ilerledikçe yıldız sayısı 3'ten 6'ya çıkar.
+      const count = Math.min(3 + Math.floor((round - 1) / 2), 6);
+
+      knight = randomSquare();
+      stars = [];
+      while (stars.length < count) {
+        const square = randomSquare();
+        if (square === knight || stars.includes(square)) continue;
+        stars.push(square);
+      }
+
+      // Hamle hakkı: makul bir rotanın uzunluğu + pay. İlk turlarda pay geniştir,
+      // son turlarda daralır — yani rota planlamak giderek zorunlu hale gelir.
+      const slack = round <= 2 ? 4 : round <= 4 ? 3 : 2;
+      movesLeft = tourLength(knight, stars) + slack;
+
+      chess.load(fenWithKnight(knight));
+      board.attach(chess);
+      board.setMarks(stars);
+      refresh();
+
+      api.say("Atı yıldızların üstüne sıçrat!");
+    }
+  };
+}
+
+  Object.defineProperty(__d, "createKnightQuest", { get: () => createKnightQuest, enumerable: true });
+},
+
+"src/games/FreePiece.js": function (__d) {
+/**
+ * FreePiece.js — "Bedava Taş Var!"
+ *
+ * Tahtada siyahın KORUMASIZ duran bir taşı vardır; çocuk onu alan hamleyi
+ * oynar. Taktik gözünün ilk adımı budur: mat aramadan önce çocuk "hangi taş
+ * korunmuyor?" sorusunu sormayı öğrenmelidir.
+ *
+ * Konumlar üretilir ve şu üç şart sağlanana kadar elenir:
+ *   1. Konum kurallara uygundur ve beyaz şah çekilmiş durumda değildir.
+ *   2. Beyazın alabileceği en kazançlı taş TEK ve en az bir at değerindedir.
+ *   3. O taşı aldıktan sonra alan taş geri alınamaz — yani gerçekten bedavadır.
+ *
+ * Böylece her turun tek ve tartışmasız bir doğru cevabı olur.
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { Chess, PIECE_NAMES_TR, toSquare } = __yukle("src/engine/Chess.js");
+const { SIMPLE_VALUES } = __yukle("src/engine/Evaluator.js");
+const { ChessBoard } = __yukle("src/components/ChessBoard.js");
+const FILES = "abcdefgh".split("");
+const WHITE_POOL = ["N", "B", "R", "Q"];
+const BLACK_POOL = ["n", "b", "r", "q"];
+
+const randomSquare = () => FILES[Math.floor(Math.random() * 8)] + (Math.floor(Math.random() * 8) + 1);
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+/** İki kare arasındaki şah mesafesi. */
+function distance(a, b) {
+  return Math.max(
+    Math.abs(FILES.indexOf(a[0]) - FILES.indexOf(b[0])),
+    Math.abs(Number(a[1]) - Number(b[1]))
+  );
+}
+
+/** Taş haritasından FEN üretir; sıra beyazdadır. */
+function toFen(pieces) {
+  const rows = [];
+  for (let rank = 8; rank >= 1; rank -= 1) {
+    let row = "";
+    let empty = 0;
+    for (const file of FILES) {
+      const symbol = pieces[`${file}${rank}`];
+      if (symbol) {
+        if (empty) row += empty;
+        empty = 0;
+        row += symbol;
+      } else empty += 1;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} w - - 0 1`;
+}
+
+/**
+ * Beyazın bütün almalarını tarar ve her birinin GERÇEK kazancını hesaplar:
+ * alınan taşın değeri eksi, kare hâlâ savunuluyorsa alan taşın değeri.
+ */
+function captureGains(chess) {
+  const gains = [];
+  for (const move of chess.moves()) {
+    if (!move.captured) continue;
+    const played = chess.move({ from: move.from, to: move.to, promotion: "q" });
+    if (!played) continue;
+    // Hamleden SONRA kare siyah tarafından hâlâ tehdit ediliyorsa taş geri alınır.
+    const recaptured = chess.attacked("b", toSquare(move.to));
+    chess.undo();
+
+    gains.push({
+      from: move.from,
+      to: move.to,
+      piece: move.piece,
+      captured: move.captured,
+      // "safe" = alan taş geri alınamaz; oyunun aradığı BEDAVA taş budur.
+      safe: !recaptured,
+      gain: SIMPLE_VALUES[move.captured] - (recaptured ? SIMPLE_VALUES[move.piece] : 0)
+    });
+  }
+  return gains;
+}
+
+/**
+ * Tek ve net bir "bedava taş" içeren konum arar.
+ * @param {number} extra Fazladan taş çifti sayısı — tur ilerledikçe tahta kalabalıklaşır.
+ */
+function buildPosition(extra) {
+  for (let attempt = 0; attempt < 260; attempt += 1) {
+    const whiteKing = randomSquare();
+    const blackKing = randomSquare();
+    if (distance(whiteKing, blackKing) < 2) continue;
+
+    const pieces = { [whiteKing]: "K", [blackKing]: "k" };
+    // Her iki tarafa eşit sayıda taş konur; kareler çakışırsa bu deneme atılır.
+    const count = 2 + extra;
+    let clash = false;
+    for (const pool of [WHITE_POOL, BLACK_POOL]) {
+      for (let index = 0; index < count; index += 1) {
+        const square = randomSquare();
+        if (pieces[square]) {
+          clash = true;
+          break;
+        }
+        pieces[square] = pick(pool);
+      }
+      if (clash) break;
+    }
+    if (clash) continue;
+
+    let chess;
+    try {
+      chess = new Chess(toFen(pieces));
+    } catch {
+      continue;
+    }
+    // Sıra beyazdayken siyah şah tehditteyse konum kural dışıdır.
+    if (chess.isKingAttacked("b")) continue;
+    // Beyaz şah çekilmişse görev "taş kazan" değil "şahı kurtar" olurdu.
+    if (chess.inCheck()) continue;
+    if (chess.isGameOver()) continue;
+
+    const gains = captureGains(chess);
+    if (gains.length === 0) continue;
+
+    // Bedava taşlar: geri alınamayan ve en az bir at değerindeki almalar.
+    // Aynı taşa iki beyaz taş birden saldırabilir; o yüzden KARE'ye göre sayılır.
+    const freeTargets = new Set(
+      gains.filter((entry) => entry.safe && SIMPLE_VALUES[entry.captured] >= 3).map((entry) => entry.to)
+    );
+    // Tahtada birden fazla bedava taş varsa "doğru cevap" tek olmaz.
+    if (freeTargets.size !== 1) continue;
+
+    const target = [...freeTargets][0];
+    const best = gains.find((entry) => entry.to === target);
+    // Başka bir alma en az bunun kadar kazandırıyorsa konum tartışmalı olur:
+    // örneğin korunan bir veziri kaleyle almak da doğru sayılabilirdi.
+    if (gains.some((entry) => entry.to !== target && entry.gain >= best.gain)) continue;
+
+    return { fen: chess.fen(), target, captured: best.captured, gain: SIMPLE_VALUES[best.captured] };
+  }
+  return null;
+}
+
+function createFreePiece() {
+  let board = null;
+  let chess = null;
+  let promptNode = null;
+  let current = null;
+  let round = 0;
+  let attempts = 0;
+
+  return {
+    id: "bedava-tas",
+    title: "Bedava Taş Var!",
+    description: "Siyahın korumasız taşını bul ve al. Kimse geri alamıyorsa taş bedavadır!",
+    icon: "puzzle",
+    rounds: 8,
+
+    setup(api) {
+      round = 0;
+      promptNode = el("p", { className: "free-prompt", text: "" });
+      chess = new Chess();
+      board = ChessBoard({
+        chess,
+        interactive: true,
+        onMove: (move) => {
+          if (!current) return false;
+
+          if (move.to === current.target) {
+            const name = PIECE_NAMES_TR[current.captured];
+            api.correct(`🎯 Bedava ${name}! ${current.gain} puanlık taşı kimse geri alamadı.`);
+          } else {
+            attempts += 1;
+            api.wrong(
+              attempts >= 2
+                ? `Henüz değil. İpucu: aradığın taş ${current.target[0].toUpperCase()} sütununda.`
+                : "Bu taş kazandırmıyor. Siyahın taşlarını tek tek gez: hangisine bir beyaz taş bakıyor ama hiçbir siyah taş korumuyor?"
+            );
+          }
+          // Konum bozulmasın diye hamle geri alınır; tur zaten yenilenecek.
+          return false;
+        }
+      });
+      api.setStage(el("div", { className: "free-piece" }, [promptNode, board.element]));
+    },
+
+    nextRound(api) {
+      round += 1;
+      attempts = 0;
+
+      // Tur ilerledikçe tahtaya taş eklenir; korumasız taşı bulmak zorlaşır.
+      const extra = Math.min(Math.floor((round - 1) / 3), 2);
+      current = buildPosition(extra);
+
+      if (!current) {
+        api.say("Konum hazırlanamadı, sıradaki tura geçiliyor.");
+        return;
+      }
+
+      chess = new Chess(current.fen);
+      board.attach(chess);
+      board.setInteractive(true);
+      promptNode.textContent = "Beyaz oynar. Siyahın korumasız taşını bul ve al!";
+      api.say("Hangi siyah taşı kimse korumuyor?");
+    }
+  };
+}
+
+  Object.defineProperty(__d, "createFreePiece", { get: () => createFreePiece, enumerable: true });
+},
+
 "src/pages/MiniGamesPage.js": function (__d) {
 /**
  * MiniGamesPage.js — Mini oyun seçme ve oynama ekranı.
  *
- * Yedi oyunun tamamı gerçekten oynanabilir. Her oyun `src/games/` altında ayrı
+ * Oyunların tamamı gerçekten oynanabilir. Her oyun `src/games/` altında ayrı
  * bir dosyadır ve ortak `GameShell` iskeletini kullanır; bu sayede puan, süre,
  * seri ve bitiş ekranı davranışı her oyunda aynıdır.
  */
@@ -45656,10 +46945,18 @@ const { createMateDash } = __yukle("src/games/MateDash.js");
 const { createGuessMove } = __yukle("src/games/GuessMove.js");
 const { createMemoryFlash } = __yukle("src/games/MemoryFlash.js");
 const { createMatchMoves } = __yukle("src/games/MatchMoves.js");
+const { createArmySetup } = __yukle("src/games/ArmySetup.js");
+const { createCheckOrMate } = __yukle("src/games/CheckOrMate.js");
+const { createKnightQuest } = __yukle("src/games/KnightQuest.js");
+const { createFreePiece } = __yukle("src/games/FreePiece.js");
 const { pageShell } = __yukle("src/pages/pageUtils.js");
 /** Oyun üreticileri — her seferinde temiz bir örnek kurulur. */
 const FACTORIES = [
+  createArmySetup,
   createMoveTarget,
+  createCheckOrMate,
+  createKnightQuest,
+  createFreePiece,
   createSquareFinder,
   createPieceQuiz,
   createMateDash,
@@ -45723,7 +47020,7 @@ function MiniGamesPage({ progress, sound }) {
 
   return pageShell(
     "Mini Oyunlar",
-    "Yedi farklı oyunla satranç refleksini güçlendir. Her oyun puan ve XP kazandırır!",
+    "Farklı oyunlarla satranç refleksini güçlendir. Her oyun puan ve XP kazandırır!",
     [host]
   );
 }
@@ -46022,6 +47319,27 @@ const { pieceHTML, symbolHTML } = __yukle("src/components/PieceGlyph.js");
 const { burst } = __yukle("src/animations/effects.js");
 const { pageShell, focusToggle } = __yukle("src/pages/pageUtils.js");
 const { sanTr } = __yukle("src/engine/Chess.js");
+const TIME_CONTROLS = [
+  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+];
+
+function clockText(ms) {
+  if (ms <= 0) return "0:00";
+  if (ms < 10000) return (Math.ceil(ms / 100) / 10).toFixed(1);
+  const total = Math.ceil(ms / 1000);
+  const hours = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
 function PlayPage({ progress, sound }) {
   const game = new GameService({ level: "kolay", playerColor: "w" });
   let resultRecorded = false;
@@ -46039,6 +47357,11 @@ function PlayPage({ progress, sound }) {
   const moveList = el("ol", { className: "move-list" });
   const capturedByPlayer = el("div", { className: "captured-row" });
   const capturedByEngine = el("div", { className: "captured-row" });
+  const engineClockView = el("span", { className: "play-clock", hidden: "" });
+  const playerClockView = el("span", { className: "play-clock", hidden: "" });
+  const engineRow = el("div", { className: "play-board-row" }, [capturedByEngine, engineClockView]);
+  const playerRow = el("div", { className: "play-board-row" }, [capturedByPlayer, playerClockView]);
+
   const thinkingBar = el("div", { className: "thinking-bar", hidden: "" }, [
     el("span", { className: "thinking-dot" }),
     el("span", { className: "thinking-dot" }),
@@ -46046,6 +47369,125 @@ function PlayPage({ progress, sound }) {
     el("span", { className: "thinking-label", text: "Bilgisayar düşünüyor" })
   ]);
   const reportHost = el("div", { className: "report-host" });
+
+  /* --- Saat Durumu --- */
+
+  let rootEl = null;
+  let timeControl = TIME_CONTROLS[0];
+  let customMinutes = 5;
+  let customIncrement = 0;
+  const clock = { w: 0, b: 0 };
+  let clockSide = null;
+  let clockRunning = false;
+  let clockSince = 0;
+  let timerId = null;
+  const lowWarned = { w: false, b: false };
+
+  function timed() {
+    return timeControl.base > 0;
+  }
+
+  function remaining(color) {
+    let left = clock[color];
+    if (clockRunning && clockSide === color) left -= Date.now() - clockSince;
+    return Math.max(0, left);
+  }
+
+  function holdClock() {
+    if (clockRunning && clockSide) {
+      clock[clockSide] = Math.max(0, clock[clockSide] - (Date.now() - clockSince));
+    }
+    clockRunning = false;
+  }
+
+  function passClock(color) {
+    holdClock();
+    clockSide = color;
+    clockSince = Date.now();
+    clockRunning = true;
+    paintClocks();
+  }
+
+  function pressClock(mover) {
+    if (!timed()) return;
+    holdClock();
+    clock[mover] += timeControl.increment * 1000;
+    passClock(mover === "w" ? "b" : "w");
+  }
+
+  function resetClocks() {
+    if (timerId) clearInterval(timerId);
+    clock.w = timeControl.base * 1000;
+    clock.b = timeControl.base * 1000;
+    clockSide = null;
+    clockRunning = false;
+    lowWarned.w = false;
+    lowWarned.b = false;
+    paintClocks();
+  }
+
+  function startTicking() {
+    if (timerId) clearInterval(timerId);
+    if (!timed()) return;
+    timerId = setInterval(() => {
+      if (rootEl && !rootEl.isConnected) {
+        clearInterval(timerId);
+        return;
+      }
+      paintClocks();
+      if (clockRunning && clockSide && remaining(clockSide) <= 0) {
+        flagFall(clockSide);
+      }
+    }, 100);
+  }
+
+  function flagFall(color) {
+    holdClock();
+    clock[color] = 0;
+    paintClocks();
+    board.setInteractive(false);
+
+    const isPlayer = color === game.playerColor;
+    const msg = isPlayer
+      ? "Süre bitti! Zamanın tükendi."
+      : "Süre bitti! Bilgisayarın zamanı tükendi, oyunu kazandın!";
+    statusLine.textContent = msg;
+    say(msg);
+
+    if (!resultRecorded) {
+      resultRecorded = true;
+      const outcome = isPlayer ? "lost" : "won";
+      progress.finishGame(outcome);
+      sound.play(outcome === "won" ? "badge" : "error");
+      if (outcome === "won") burst(statusLine);
+    }
+    showReport({ over: true, reason: msg, winner: isPlayer ? game.engineColor : game.playerColor });
+  }
+
+  function paintClocks() {
+    const show = timed();
+    engineClockView.hidden = !show;
+    playerClockView.hidden = !show;
+    if (!show) return;
+
+    const playerLeft = remaining(game.playerColor);
+    const engineLeft = remaining(game.engineColor);
+
+    playerClockView.textContent = clockText(playerLeft);
+    playerClockView.classList.toggle("running", clockRunning && clockSide === game.playerColor);
+    playerClockView.classList.toggle("low", playerLeft <= 60000 && playerLeft > 10000);
+    playerClockView.classList.toggle("critical", playerLeft <= 10000);
+
+    engineClockView.textContent = clockText(engineLeft);
+    engineClockView.classList.toggle("running", clockRunning && clockSide === game.engineColor);
+    engineClockView.classList.toggle("low", engineLeft <= 60000 && engineLeft > 10000);
+    engineClockView.classList.toggle("critical", engineLeft <= 10000);
+
+    if (playerLeft <= 10000 && clockRunning && clockSide === game.playerColor && !lowWarned[game.playerColor]) {
+      lowWarned[game.playerColor] = true;
+      sound.play("error");
+    }
+  }
 
   const board = ChessBoard({
     chess: game.chess,
@@ -46082,7 +47524,11 @@ function PlayPage({ progress, sound }) {
     say(result.report.advice);
     refresh();
 
-    if (await checkGameOver()) return;
+    if (await checkGameOver()) {
+      holdClock();
+      return;
+    }
+    pressClock(game.playerColor);
     await runEngine();
   }
 
@@ -46102,7 +47548,11 @@ function PlayPage({ progress, sound }) {
     }
 
     refresh();
-    if (await checkGameOver()) return;
+    if (await checkGameOver()) {
+      holdClock();
+      return;
+    }
+    pressClock(game.engineColor);
     board.setInteractive(true);
   }
 
@@ -46111,6 +47561,7 @@ function PlayPage({ progress, sound }) {
     const status = game.status();
     if (!status.over) return false;
 
+    holdClock();
     board.setInteractive(false);
     statusLine.textContent = status.reason;
     say(status.reason);
@@ -46176,6 +47627,12 @@ function PlayPage({ progress, sound }) {
     board.setInteractive(true);
     say("Yeni oyun başladı. Merkezi kontrol etmeyi ve taşlarını geliştirmeyi unutma!");
     refresh();
+
+    resetClocks();
+    if (timed()) {
+      passClock("w");
+      startTicking();
+    }
 
     // Oyuncu siyahsa bilgisayar başlar.
     if (playerColor === "b") await runEngine();
@@ -46306,6 +47763,10 @@ function PlayPage({ progress, sound }) {
       while (moveList.children.length > game.chess.getHistory().length) moveList.lastChild.remove();
       board.update(game.lastMove);
       board.setInteractive(true);
+      if (timed()) {
+        holdClock();
+        passClock(game.playerColor);
+      }
       say("Hamleyi geri aldık. Bu sefer daha dikkatli bak!");
       refresh();
     }),
@@ -46332,17 +47793,220 @@ function PlayPage({ progress, sound }) {
   const focusButton = focusToggle(sound);
 
   /* ---------------------------------------------------------------- *
-   * Katlanabilir ayarlar (seviye + renk)
-   *
-   * Oyun başladıktan sonra bunlara nadiren dokunulur; bu yüzden varsayılan
-   * olarak kapalıdır ve panelin yüksekliğini şişirmez.
+   * Katlanabilir ayarlar (seviye + renk + süre)
    * ---------------------------------------------------------------- */
+
+  const timeNote = el("p", { className: "play-time-note" });
+
+  function timeHint() {
+    if (!timed()) return "Saat kapalı: istediğin kadar düşünebilirsin.";
+    const mins = Math.floor(timeControl.base / 60);
+    const secs = timeControl.base % 60;
+    const baseStr = secs > 0 ? `${mins} dk ${secs} sn` : `${mins} dakika`;
+    const base = `Her iki tarafa ${baseStr}. Süresi biten oyunu kaybeder.`;
+    return timeControl.increment > 0
+      ? `${base} Her hamleden sonra saate ${timeControl.increment} saniye eklenir.`
+      : base;
+  }
+
+  const minutesInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "1",
+    max: "180",
+    value: String(customMinutes),
+    "aria-label": "Süre dakika",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        customMinutes = Math.min(180, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const incrementInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "0",
+    max: "60",
+    value: String(customIncrement),
+    "aria-label": "Ekleme saniye",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        customIncrement = Math.min(60, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const minuteChips = [1, 3, 5, 7, 10, 15, 20, 30].map((m) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `${m} dk`,
+      onClick: () => {
+        sound.play("click");
+        setCustomMinutes(m);
+      }
+    })
+  );
+
+  const incrementChips = [0, 1, 2, 5, 10].map((s) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `+${s} sn`,
+      onClick: () => {
+        sound.play("click");
+        setCustomIncrement(s);
+      }
+    })
+  );
+
+  function updateCustomInputs() {
+    minutesInput.value = String(customMinutes);
+    incrementInput.value = String(customIncrement);
+    minuteChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [1, 3, 5, 7, 10, 15, 20, 30][i] === customMinutes);
+    });
+    incrementChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [0, 1, 2, 5, 10][i] === customIncrement);
+    });
+  }
+
+  const customTimeBox = el("div", { className: "duel-custom-time", hidden: "" }, [
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⏱ Ana Süre" }),
+        el("span", { className: "custom-time-unit", text: "dakika" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 dakika azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes - 1);
+          }
+        }),
+        minutesInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 dakika artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, minuteChips)
+    ]),
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⚡ Hamle Başına Ekleme" }),
+        el("span", { className: "custom-time-unit", text: "saniye" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 saniye azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement - 1);
+          }
+        }),
+        incrementInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 saniye artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, incrementChips)
+    ])
+  ]);
+
+  function applyCustomTime() {
+    timeControl = {
+      id: "ozel",
+      label: "Özel",
+      detail: `${customMinutes} dk`,
+      base: Math.max(1, customMinutes) * 60,
+      increment: Math.max(0, customIncrement)
+    };
+    for (const button of timeButtonsContainer.children) {
+      button.classList.toggle("active", button.dataset.time === "ozel");
+    }
+    customTimeBox.hidden = false;
+    updateCustomInputs();
+    startNewGame();
+    timeNote.textContent = timeHint();
+  }
+
+  function setCustomMinutes(val) {
+    customMinutes = Math.min(180, Math.max(1, Number(val) || 1));
+    applyCustomTime();
+  }
+
+  function setCustomIncrement(val) {
+    customIncrement = Math.min(60, Math.max(0, Number(val) || 0));
+    applyCustomTime();
+  }
+
+  const timeButtonsContainer = el("div", { className: "segmented play-times" });
+
+  const timeButtons = TIME_CONTROLS.map((option) =>
+    el("button", {
+      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+      type: "button",
+      "data-time": option.id,
+      title: `${option.label} — ${option.detail}`,
+      onClick: (event) => {
+        sound.play("click");
+        if (option.id === "ozel") {
+          applyCustomTime();
+        } else {
+          timeControl = option;
+          customTimeBox.hidden = true;
+          if (option.base > 0) {
+            customMinutes = Math.floor(option.base / 60);
+            customIncrement = option.increment;
+            updateCustomInputs();
+          }
+          for (const button of timeButtonsContainer.children) {
+            button.classList.toggle("active", button.dataset.time === option.id);
+          }
+          startNewGame();
+          timeNote.textContent = timeHint();
+        }
+      }
+    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
+  );
+  timeButtonsContainer.append(...timeButtons);
+  timeNote.textContent = timeHint();
 
   const settingsBody = el("div", { className: "play-settings-body" }, [
     el("label", { className: "panel-label", text: "Zorluk" }),
     el("div", { className: "segmented" }, levelButtons),
     el("label", { className: "panel-label", text: "Rengin" }),
-    el("div", { className: "segmented" }, colorButtons)
+    el("div", { className: "segmented" }, colorButtons),
+    el("label", { className: "panel-label", text: "Satranç saati" }),
+    timeButtonsContainer,
+    customTimeBox,
+    timeNote
   ]);
 
   const settingsBox = el("details", { className: "play-settings" }, [
@@ -46353,15 +48017,15 @@ function PlayPage({ progress, sound }) {
   refresh();
 
   // Oyun ekranında başlık kompakt: dikey alan tahtaya gitsin.
-  return pageShell(
+  rootEl = pageShell(
     "Bilgisayara Karşı Oyna",
     "Gerçek satranç kurallarıyla oyna.",
     [
       el("section", { className: "play-layout" }, [
         el("div", { className: "play-board" }, [
-          capturedByEngine,
+          engineRow,
           board.element,
-          capturedByPlayer,
+          playerRow,
           thinkingBar
         ]),
         el("aside", { className: "play-panel" }, [
@@ -46376,6 +48040,8 @@ function PlayPage({ progress, sound }) {
     ],
     { compact: true }
   );
+
+  return rootEl;
 }
 
   Object.defineProperty(__d, "PlayPage", { get: () => PlayPage, enumerable: true });
@@ -46442,7 +48108,8 @@ const TIME_CONTROLS = [
   { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
   { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
   { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 }
+  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
 ];
 
 /** Maç puanını satranç geleneğine göre yazar: 0.5 → "½", 1.5 → "1½". */
@@ -46461,7 +48128,13 @@ function clockText(ms) {
   if (ms <= 0) return "0:00";
   if (ms < 10000) return (Math.ceil(ms / 100) / 10).toFixed(1);
   const total = Math.ceil(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  const hours = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+  return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
 /** Standart başlangıç dizilişini kare → taş kodu haritası olarak verir. */
@@ -47411,16 +49084,181 @@ function DuelPage({ sound }) {
 
   /* --- Kurulum: satranç saati seçimi --- */
 
+  let customMinutes = 3;
+  let customIncrement = 2;
+
   const timeNote = el("p", { className: "duel-time-note" });
 
   /** Seçili temponun ne anlama geldiğini çocuk diliyle anlatır. */
   function timeHint() {
     if (!timed()) return "Saat kapalı: iki oyuncu da istediği kadar düşünebilir.";
-    const base = `Her oyuncuya ${timeControl.base / 60} dakika. Süresi biten oyunu kaybeder.`;
+    const mins = Math.floor(timeControl.base / 60);
+    const secs = timeControl.base % 60;
+    const baseStr = secs > 0 ? `${mins} dk ${secs} sn` : `${mins} dakika`;
+    const base = `Her oyuncuya ${baseStr}. Süresi biten oyunu kaybeder.`;
     return timeControl.increment > 0
       ? `${base} Her hamleden sonra saatine ${timeControl.increment} saniye eklenir.`
       : base;
   }
+
+  const minutesInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "1",
+    max: "180",
+    value: String(customMinutes),
+    "aria-label": "Süre dakika",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        customMinutes = Math.min(180, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const incrementInput = el("input", {
+    className: "custom-time-input",
+    type: "number",
+    min: "0",
+    max: "60",
+    value: String(customIncrement),
+    "aria-label": "Ekleme saniye",
+    onInput: (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val) && val >= 0) {
+        customIncrement = Math.min(60, val);
+        applyCustomTime();
+      }
+    }
+  });
+
+  const minuteChips = [1, 3, 5, 7, 10, 15, 20, 30].map((m) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `${m} dk`,
+      onClick: () => {
+        sound.play("click");
+        setCustomMinutes(m);
+      }
+    })
+  );
+
+  const incrementChips = [0, 1, 2, 5, 10].map((s) =>
+    el("button", {
+      className: "custom-chip",
+      type: "button",
+      text: `+${s} sn`,
+      onClick: () => {
+        sound.play("click");
+        setCustomIncrement(s);
+      }
+    })
+  );
+
+  function updateCustomInputs() {
+    minutesInput.value = String(customMinutes);
+    incrementInput.value = String(customIncrement);
+    minuteChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [1, 3, 5, 7, 10, 15, 20, 30][i] === customMinutes);
+    });
+    incrementChips.forEach((chip, i) => {
+      chip.classList.toggle("active", [0, 1, 2, 5, 10][i] === customIncrement);
+    });
+  }
+
+  const customTimeBox = el("div", { className: "duel-custom-time", hidden: "" }, [
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⏱ Ana Süre" }),
+        el("span", { className: "custom-time-unit", text: "dakika" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 dakika azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes - 1);
+          }
+        }),
+        minutesInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 dakika artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomMinutes(customMinutes + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, minuteChips)
+    ]),
+    el("div", { className: "custom-time-group" }, [
+      el("div", { className: "custom-time-label" }, [
+        el("span", { text: "⚡ Hamle Başına Ekleme" }),
+        el("span", { className: "custom-time-unit", text: "saniye" })
+      ]),
+      el("div", { className: "custom-time-stepper" }, [
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "−",
+          title: "1 saniye azalt",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement - 1);
+          }
+        }),
+        incrementInput,
+        el("button", {
+          className: "custom-time-btn",
+          type: "button",
+          text: "+",
+          title: "1 saniye artır",
+          onClick: () => {
+            sound.play("click");
+            setCustomIncrement(customIncrement + 1);
+          }
+        })
+      ]),
+      el("div", { className: "custom-time-chips" }, incrementChips)
+    ])
+  ]);
+
+  function applyCustomTime() {
+    timeControl = {
+      id: "ozel",
+      label: "Özel",
+      detail: `${customMinutes} dk`,
+      base: Math.max(1, customMinutes) * 60,
+      increment: Math.max(0, customIncrement)
+    };
+    for (const button of timeButtonsContainer.children) {
+      button.classList.toggle("active", button.dataset.time === "ozel");
+    }
+    customTimeBox.hidden = false;
+    updateCustomInputs();
+    resetClocks();
+    timeNote.textContent = timeHint();
+  }
+
+  function setCustomMinutes(val) {
+    customMinutes = Math.min(180, Math.max(1, Number(val) || 1));
+    applyCustomTime();
+  }
+
+  function setCustomIncrement(val) {
+    customIncrement = Math.min(60, Math.max(0, Number(val) || 0));
+    applyCustomTime();
+  }
+
+  const timeButtonsContainer = el("div", { className: "segmented duel-times" });
 
   const timeButtons = TIME_CONTROLS.map((option) =>
     el("button", {
@@ -47429,16 +49267,27 @@ function DuelPage({ sound }) {
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
-        timeControl = option;
         sound.play("click");
-        for (const button of event.currentTarget.parentElement.children) {
-          button.classList.toggle("active", button.dataset.time === option.id);
+        if (option.id === "ozel") {
+          applyCustomTime();
+        } else {
+          timeControl = option;
+          customTimeBox.hidden = true;
+          if (option.base > 0) {
+            customMinutes = Math.floor(option.base / 60);
+            customIncrement = option.increment;
+            updateCustomInputs();
+          }
+          for (const button of timeButtonsContainer.children) {
+            button.classList.toggle("active", button.dataset.time === option.id);
+          }
+          resetClocks();
+          timeNote.textContent = timeHint();
         }
-        resetClocks();
-        timeNote.textContent = timeHint();
       }
     }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
   );
+  timeButtonsContainer.append(...timeButtons);
 
   timeNote.textContent = timeHint();
 
@@ -47487,7 +49336,8 @@ function DuelPage({ sound }) {
     el("label", { className: "panel-label", text: "Kim başlıyor?" }),
     el("div", { className: "segmented" }, turnButtons),
     el("label", { className: "panel-label", text: "Satranç saati" }),
-    el("div", { className: "segmented duel-times" }, timeButtons),
+    timeButtonsContainer,
+    customTimeBox,
     timeNote,
     el("label", { className: "panel-label", text: "Oyuncular" }),
     el("div", { className: "duel-names" }, [nameInput("w"), nameInput("b")]),

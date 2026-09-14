@@ -216,6 +216,54 @@
 
 .captured-empty { color: var(--muted); opacity: 0.6; }
 
+.play-board-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.play-board-row .captured-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.play-clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.play-clock[hidden] {
+  display: none;
+}
+
+.play-clock.running {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.play-clock.low {
+  border-color: var(--sun-dark);
+  background: var(--sun-soft);
+  color: var(--sun-dark);
+}
+
+.play-clock.critical {
+  border-color: var(--coral-dark);
+  background: var(--coral);
+  color: #fff;
+  animation: clock-pulse 1s ease-in-out infinite;
+}
+
 /* --- "Düşünüyor" göstergesi --- */
 
 .thinking-bar {
@@ -602,6 +650,27 @@ body.focus-mode .play-board .cb-stage {
 .play-settings .seg-button { padding: 0.35rem 0.25rem; }
 .play-settings .seg-button strong { font-size: 0.78rem; }
 .play-settings .seg-button small { font-size: 0.72rem; }
+
+.play-times .seg-button {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-height: 2.3rem;
+  padding: 0.3rem 0.2rem;
+  text-align: center;
+}
+
+.play-times .seg-button strong { font-size: 0.74rem; }
+.play-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
+
+.play-time-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+  font-weight: 700;
+}
 
 /* --- Daha sıkı durum ve öğretmen kutusu --- */
 
