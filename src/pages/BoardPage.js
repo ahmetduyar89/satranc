@@ -8,14 +8,69 @@
 
 import { el } from "../utils/dom.js";
 import { routeParam } from "../utils/router.js";
-import { Chess, SQUARE_LIST, toAlgebraic, isLightSquare, toSquare } from "../engine/Chess.js";
+import { Chess, SQUARE_LIST, toAlgebraic, isLightSquare, toSquare, PIECE_NAMES_TR } from "../engine/Chess.js";
 import { ChessBoard } from "../components/ChessBoard.js";
 import { icon } from "../components/Icon.js";
+import { pieceHTML } from "../components/PieceGlyph.js";
 import { pageShell } from "./pageUtils.js";
 
 const EMPTY = "8/8/8/8/8/8/8/8 w - - 0 1";
-const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const FILES = "abcdefgh".split("");
+
+/** Başlangıç dizilişinde arka sıradaki her sütunun sahibi (iki renk için aynı). */
+const HOME = { a: "r", b: "n", c: "b", d: "q", e: "k", f: "b", g: "n", h: "r" };
+
+/** Kurulum rafındaki taşlar ve adetleri; raf bu sırayla dizilir. */
+const TRAY = [["p", 8], ["r", 2], ["n", 2], ["b", 2], ["q", 1], ["k", 1]];
+
+/** "kale" → "Kale". */
+const capitalize = (word) => word.charAt(0).toLocaleUpperCase("tr") + word.slice(1);
+
+/** Taş haritasından ({ e1: "wk" }) FEN üretir. */
+function toFen(pieces) {
+  const rows = [];
+  for (let rank = 8; rank >= 1; rank -= 1) {
+    let row = "";
+    let empty = 0;
+    for (const file of FILES) {
+      const code = pieces[`${file}${rank}`];
+      if (code) {
+        if (empty) row += empty;
+        empty = 0;
+        row += code[0] === "w" ? code[1].toUpperCase() : code[1];
+      } else empty += 1;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} w - - 0 1`;
+}
+
+/** Taş ("wq") bu kareye mi ait? */
+function belongsTo(code, square) {
+  const [color, type] = code;
+  const rank = square[1];
+  if (type === "p") return rank === (color === "w" ? "2" : "7");
+  return rank === (color === "w" ? "1" : "8") && HOME[square[0]] === type;
+}
+
+/**
+ * Yanlış yerleştirmede KURALI hatırlatan cümle; kareyi çocuk kendisi bulur.
+ */
+function setupHint(code) {
+  const [color, type] = code;
+  const back = color === "w" ? 1 : 8;
+  switch (type) {
+    case "p": return `Piyonlar ordunun en önünde, ${color === "w" ? 2 : 7}. yatayda yan yana dizilir.`;
+    case "r": return `Kaleler tahtanın köşelerinde durur: a${back} ve h${back}.`;
+    case "n": return `Atlar kalelerin hemen yanında durur: b${back} ve g${back}.`;
+    case "b": return `Filler atların yanında durur: c${back} ve f${back}.`;
+    case "q": return color === "w"
+      ? "Vezir kendi rengini sever: beyaz vezir açık kare olan d1'e oturur."
+      : "Vezir kendi rengini sever: siyah vezir koyu kare olan d8'e oturur.";
+    default: return `Şah, vezirin yanındaki kareye oturur: e${back}.`;
+  }
+}
 
 /** Tüm kare adları. */
 const ALL = SQUARE_LIST.map(toAlgebraic);
@@ -26,9 +81,14 @@ export function BoardPage({ progress, sound }) {
   let quizTarget = null;
   let quizScore = 0;
 
+  // Kurulum dersi: tahtaya konan taşlar ve rafta seçili taş.
+  let placed = {};
+  let brush = null;
+
   const tabRow = el("div", { className: "stage-row" });
   const status = el("p", { className: "lesson-status", text: "" });
   const infoPanel = el("aside", { className: "lesson-panel" });
+  const trayNode = el("div", { className: "setup-tray", hidden: true });
 
   const board = ChessBoard({
     chess: new Chess(EMPTY),
@@ -150,27 +210,133 @@ export function BoardPage({ progress, sound }) {
       title: "Kurulum",
       heading: "Tahta nasıl kurulur?",
       detail:
-        "Altın kural: SAĞ ALT KÖŞE BEYAZ olmalı (h1 açık karedir). Kaleler köşelere, atlar yanlarına, filler onların yanına gelir. Vezir kendi rengindeki kareye oturur, şah da yanına. Piyonlar en öne dizilir.",
+        "Altın kural: SAĞ ALT KÖŞE BEYAZ olmalı (h1 açık karedir). Kaleler köşelere, atlar yanlarına, filler onların yanına gelir. Vezir kendi rengindeki kareye oturur, şah da yanına. Piyonlar en öne dizilir. Yandaki raftan taş seç ve evine dokun!",
+      tray: true,
       setup() {
-        board.attach(new Chess(START));
-        board.setMarks(["h1", "d1", "e1"]);
-        say("Başlangıç dizilişi. Vezir d1'de (beyaz vezir açık karede), şah e1'de, sağ alt köşe h1 açık renkte.");
+        placed = {};
+        brush = null;
+        drawSetup();
+        say("Tahta boş. Yandaki raftan bir taş seç, sonra ait olduğu kareye dokun.");
       },
       onClick(square) {
+        if (!brush) {
+          const code = placed[square];
+          say(
+            code
+              ? `${square.toUpperCase()} — ${code[0] === "w" ? "beyaz" : "siyah"} ${PIECE_NAMES_TR[code[1]]}.`
+              : "Önce yandaki raftan bir taş seç, sonra kareye dokun.",
+            code ? "info" : ""
+          );
+          return;
+        }
+        if (placed[square]) {
+          board.shake(square);
+          say(`${square.toUpperCase()} karesi dolu. Boş bir kare seç.`, "wrong");
+          return;
+        }
+
+        const name = capitalize(PIECE_NAMES_TR[brush[1]]);
+        if (!belongsTo(brush, square)) {
+          sound.play("error");
+          board.shake(square);
+          say(`${name} ${square.toUpperCase()} karesine gitmez. ${setupHint(brush)}`, "wrong");
+          return;
+        }
+
+        placed[square] = brush;
+        // Bu taştan rafta kalmadıysa seçim düşer; kalıyorsa (piyon, kale...) seçili
+        // kalır ki ikincisi için rafa dönmek gerekmesin.
+        if (remainingOf(brush) === 0) brush = null;
+        drawSetup();
+
+        const left = 32 - Object.keys(placed).length;
+        if (left === 0) {
+          sound.play("success");
+          say("🎉 Harika! 32 taşın hepsi yerinde. Sağ alt köşe (h1) açık kare mi? Evet — tahta doğru kuruldu!", "correct");
+          return;
+        }
         sound.play("move");
-        const notes = {
-          d1: "d1 — Vezir burada. 'Vezir kendi rengini sever': beyaz vezir açık karede durur.",
-          e1: "e1 — Şah burada, vezirin yanında.",
-          h1: "h1 — Sağ alt köşe. AÇIK renk olmalı; değilse tahta ters kurulmuştur!",
-          a1: "a1 — Kale köşede. Kaleler her zaman dört köşede başlar.",
-          b1: "b1 — At. Atlar kalelerin yanında durur.",
-          c1: "c1 — Fil. Filler atların yanında durur."
-        };
-        board.setMarks([square]);
-        say(notes[square] || `${square.toUpperCase()} karesi.`, "info");
+        say(`✅ Doğru! ${name} ${square.toUpperCase()} karesinde. ${left} taş kaldı.`, "correct");
       }
     }
   ];
+
+  /** Bir taştan rafta kaç tane kaldığını söyler. */
+  function remainingOf(code) {
+    const total = TRAY.find(([type]) => type === code[1])[1];
+    return total - Object.values(placed).filter((value) => value === code).length;
+  }
+
+  /** Kurulum dersinde tahtayı ve taş rafını tazeler. */
+  function drawSetup() {
+    board.attach(new Chess(toFen(placed)));
+    board.setMarks([]);
+
+    const column = (color) =>
+      el("div", { className: "setup-tray-column" }, [
+        el("p", { className: "setup-tray-title", text: color === "w" ? "Beyaz" : "Siyah" }),
+        ...TRAY.map(([type]) => {
+          const code = color + type;
+          const left = remainingOf(code);
+          return el("button", {
+            className: `setup-piece ${brush === code ? "selected" : ""}`,
+            type: "button",
+            disabled: left === 0 ? "" : null,
+            "aria-label": `${color === "w" ? "Beyaz" : "Siyah"} ${PIECE_NAMES_TR[type]} seç, ${left} tane kaldı`,
+            "aria-pressed": brush === code ? "true" : "false",
+            title: capitalize(PIECE_NAMES_TR[type]),
+            onClick: () => {
+              sound.play("click");
+              brush = brush === code ? null : code;
+              drawSetup();
+              if (brush) say(`${color === "w" ? "Beyaz" : "Siyah"} ${PIECE_NAMES_TR[type]} seçildi. Şimdi evine dokun.`);
+            }
+          }, [
+            el("span", { className: "setup-piece-glyph", html: pieceHTML(code) }),
+            el("span", { className: "setup-piece-count", text: `×${left}` })
+          ]);
+        })
+      ]);
+
+    trayNode.replaceChildren(
+      el("div", { className: "setup-tray-columns" }, [column("w"), column("b")]),
+      el("div", { className: "setup-tray-actions" }, [
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: "Baştan Diz",
+          onClick: () => {
+            sound.play("click");
+            lessons[lessonIndex].setup();
+          }
+        }),
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: "Doğrusunu Göster",
+          onClick: () => {
+            sound.play("click");
+            placed = startPlacement();
+            brush = null;
+            drawSetup();
+            say("Başlangıç dizilişi bu. Vezir d1'de (beyaz vezir açık karede), şah e1'de, sağ alt köşe h1 açık renkte.", "info");
+          }
+        })
+      ])
+    );
+  }
+
+  /** Başlangıç dizilişinin taş haritası. */
+  function startPlacement() {
+    const pieces = {};
+    for (const file of FILES) {
+      pieces[`${file}1`] = `w${HOME[file]}`;
+      pieces[`${file}2`] = "wp";
+      pieces[`${file}7`] = "bp";
+      pieces[`${file}8`] = `b${HOME[file]}`;
+    }
+    return pieces;
+  }
 
   /** Kare rengi oyununda yeni soru üretir. */
   function newColorQuiz() {
@@ -233,6 +399,8 @@ export function BoardPage({ progress, sound }) {
 
   function showLesson() {
     quizTarget = null;
+    brush = null;
+    trayNode.hidden = !lessons[lessonIndex].tray;
     renderTabs();
     renderInfo();
     lessons[lessonIndex].setup();
@@ -245,7 +413,11 @@ export function BoardPage({ progress, sound }) {
     "8x8 = 64 kare. Koordinatları öğrenmek satrancın alfabesidir — her karenin adını bilmeden hamle konuşulamaz.",
     [
       el("section", { className: "lesson-layout" }, [
-        el("div", { className: "lesson-main" }, [tabRow, board.element, status]),
+        el("div", { className: "lesson-main" }, [
+          tabRow,
+          el("div", { className: "setup-row" }, [board.element, trayNode]),
+          status
+        ]),
         infoPanel
       ])
     ],
