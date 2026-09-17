@@ -27,7 +27,10 @@ const paths = {
   // Satranç saati: kadran, duraklat ve devam et
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3.5 2",
   pause: "M9 5v14M15 5v14",
-  play: "M8 5l11 7-11 7z"
+  play: "M8 5l11 7-11 7z",
+  // Sınıf (okul binası) ve turnuva kupası
+  school: "M3 21h18M5 21V10l7-5 7 5v11M10 21v-5h4v5M12 9.5h.01",
+  trophy: "M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9.5 17h5"
 };
 
 export function icon(name, className = "icon") {

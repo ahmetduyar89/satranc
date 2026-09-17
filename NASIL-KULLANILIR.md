@@ -48,7 +48,10 @@ Sol menüdeki **İki Kişilik Oyun** bölümü sınıf içi karşılaşmalar iç
 3. **Satranç saati** seç: *Süresiz*, *5 dk*, *10 dk*, *15+10* ya da **Özel**
    (istediğin süreyi dakika olarak belirleyebilir, istersen hamle başına ekleme
    saniyesi de ekleyebilirsin).
-4. Oyuncu adlarını yaz, kimin başlayacağını seç ve **Oyunu Başlat**'a bas.
+4. Oyuncuları seç, kimin başlayacağını belirle ve **Oyunu Başlat**'a bas.
+   Üst çubukta bir **sınıf seçiliyse** oyuncular o sınıfın listesinden seçilir
+   ve oyun bitince sonuç iki öğrencinin kaydına otomatik işlenir. Sınıf
+   seçili değilse ad elle yazılır, sonuç kaydedilmez.
 5. İki tahta düzeninde birinde yapılan hamle diğerinde anında görünür;
    sırası gelen oyuncunun tahtası yeşil çerçeveyle belirginleşir.
 
@@ -67,6 +70,54 @@ Tahtaların üstündeki **skor tahtası** üç şey gösterir:
 
 Araç çubuğundaki ⏸ düğmesi saati duraklatır (o sırada tahtalar kilitlenir),
 ⛶ düğmesi menüyü gizleyip tahtaları büyütür (Esc ile çıkılır).
+Oyun panelindeki **Beyaz/Siyah pes etti** ve **Beraberlik** düğmeleri, motorun
+kendi bulamayacağı sonuçlar içindir. Bitmiş oyunda hamle geri alınırsa kayıt da
+geri alınır.
+
+### Sınıflar ve öğrenciler
+
+Sol menüdeki **Sınıflarım** bölümünde:
+
+1. **Sınıf Ekle** ile sınıfı oluştur (örn. *4-B*).
+2. Öğrencileri tek tek yaz ya da **Liste Yapıştır** ile e-Okul/Excel listesini
+   yapıştır. Satır başındaki numaralar atılır, BÜYÜK HARF adlar düzeltilir,
+   listede zaten olan ad tekrar eklenmez.
+3. Sıralama tablosu tüm maçlardan (iki kişilik oyun, turnuva, elle girilen)
+   hesaplanır: galibiyet 1, beraberlik ½ puan. Öğrenciye dokununca maç geçmişi
+   açılır; yanlış bir kaydı oradan silebilirsin.
+4. Gerçek tahtada oynanan maçı **Maç Sonucu Gir** kartından kaydedebilirsin.
+
+Seçili sınıf üst çubukta görünür ve oradan değiştirilebilir. İki Kişilik Oyun
+ve Turnuva hep bu sınıfla çalışır.
+
+**Veriler nerede?** Sınıf kayıtları kullanılan bilgisayarın tarayıcısında
+durur. Her sınıfın bilgisayarında o sınıfın verileri kalır. Uygulama
+güncellense de kayıtlar silinmez; ama tarayıcı verileri temizlenirse silinir.
+Bu yüzden ara sıra **Yedekle** ile dosya al; başka bilgisayara taşımak için
+orada **Geri Yükle** kullan (geri yükleme o bilgisayardaki sınıf kayıtlarının
+yerine geçer).
+
+### Turnuva (İsviçre sistemi)
+
+Sol menüdeki **Turnuva** bölümü seçili sınıfla çalışır:
+
+1. Turnuva adını yaz, katılacak öğrencileri işaretle. Tur sayısı otomatik
+   önerilir (9 oyuncu → 5 tur), istersen değiştir.
+2. **Turnuvayı Oluştur** ile 1. tur eşleşir. İlk tur kurayla belirlenir.
+3. Her masanın sonucunu **1-0 / ½-½ / 0-1** düğmeleriyle gir ya da
+   **Tahtada Oyna** ile İki Kişilik Oyun ekranında oynat; oyun bitince sonuç
+   masaya kendiliğinden yazılır (**Turnuvaya Dön** ile geri gelinir).
+4. Turun bütün sonuçları girilince **Sonraki Turu Eşleştir**. Eşit puanlılar
+   birbiriyle eşleşir, aynı iki öğrenci tekrar karşılaşmaz, renkler dengelenir.
+   Tek sayıda oyuncu varsa bir öğrenci **bay** geçer ve 1 puan alır (kimse
+   ikinci kez bay almaz).
+5. **Puan Tablosu** puan → Buchholz (rakiplerin puan toplamı) → galibiyet
+   sırasıyla dizilir. Son tur bitince **Turnuvayı Bitir** ile kürsü görünür.
+
+Yanlış eşleştirmede **Son Turu Geri Al** kullanılabilir. Turnuvadan ayrılan
+öğrenci için tabloda **Çekildi**, sonradan gelen için **Öğrenci ekle** vardır.
+Çok küçük gruplarda (5-6 kişi, 4 tur) tekrar eşleşme kaçınılmaz olabilir;
+o durumda en az tekrarlı eşleşme seçilir.
 
 ---
 

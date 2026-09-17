@@ -54,6 +54,8 @@ src/
     BadgesPage.js
     ProfilePage.js
     SettingsPage.js
+    ClassesPage.js      # Sınıflarım: sınıf/öğrenci yönetimi, sıralama, maç geçmişi, yedek
+    TournamentPage.js   # İsviçre sistemi turnuva
   engine/
     Chess.js        # Kural motoru (0x88): hamle üretimi, FEN/SAN, mat/pat/beraberlik
     Evaluator.js    # Konum değerlendirme: materyal, kare tabloları, piyon yapısı
@@ -92,9 +94,12 @@ src/
   services/
     ProgressService.js  # İlerleme + `onChange` aboneliği (üst çubuk sayaçları)
     GameService.js   # Oyun akışı, hamle kalitesi, ipucu, doğruluk raporu
+    ClassroomService.js # Sınıflar, öğrenciler, maç kayıtları, turnuvalar, yedek
+    SwissPairing.js  # İsviçre sistemi puanlama ve eşleştirme (saf fonksiyonlar)
   styles/
     base.css        # Tasarım sistemi: renk paleti, yazı tipi, köşe ve gölge ölçeği
     layout.css
+    classes.css     # Sınıflarım, Turnuva, üst çubuk sınıf seçicisi
     components.css
     board.css
     chessboard.css
@@ -136,6 +141,15 @@ src/
   iki satranç saati (Süresiz / 5 dk / 10 dk / 15+10 Fischer eklemeli, duraklatma
   düğmesiyle), tahtadaki materyal farkı (piyon 1 … vezir 9) ve oyunlar boyunca
   biriken maç skoru (kazanan 1, beraberlik ½).
+- Sınıflarım: sınıf ve öğrenci (ad soyad) yönetimi, e-Okul listesinden toplu ekleme,
+  maçlardan hesaplanan sıralama, öğrenci maç geçmişi, elle sonuç girişi ve JSON yedek.
+  Veri `services/ClassroomService.js` içinde, ilerlemeden ayrı localStorage anahtarında
+  ("satranc-okulu-siniflar") durur. Üst çubuktaki seçici aktif sınıfı belirler;
+  İki Kişilik Oyun öğrencileri buradan seçer ve biten oyunu kaydeder.
+- Turnuva: aktif sınıfın İsviçre sistemi turnuvaları (`services/SwissPairing.js`):
+  puan gruplarında üst yarı–alt yarı eşleşmesi, tekrar eşleşme ve çift bay engeli,
+  renk dengesi, Buchholz eşitlik bozma. Masa sonucu elle ya da "Tahtada Oyna" ile
+  İki Kişilik Oyun ekranından (#/duello?turnuva=…&masa=…) girilir.
 - Yapay Zeka Öğretmeni: serbest oynanan tahta + gerçek konum analizi (Coach.js) ve soru-cevap.
 - Rozetler: 20 rozet, gruplara ayrılmış; kilitli olanlar ilerleme çubuğuyla ("4/7") gösterilir.
 - Profil: seviye/unvan, XP çubuğu, bölüm bölüm ilerleme, oyun istatistikleri, mini oyun rekorları.

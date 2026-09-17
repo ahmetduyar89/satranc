@@ -21,11 +21,11 @@ import { pageShell, focusToggle } from "./pageUtils.js";
 import { sanTr } from "../engine/Chess.js";
 
 const TIME_CONTROLS = [
-  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
-  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
-  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
-  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+  { id: "yok", label: "Süresiz", detail: "Saat yok", icon: "⚪", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", icon: "⚡", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", icon: "🏃", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", icon: "🏆", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel Süre", detail: "Kendin belirle", icon: "⚙️", base: 180, increment: 2 }
 ];
 
 function clockText(ms) {
@@ -640,10 +640,19 @@ export function PlayPage({ progress, sound }) {
     ])
   ]);
 
+  const customBadge = el("span", {
+    className: "custom-opt-badge",
+    text: `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "")
+  });
+
+  function updateCustomBadge() {
+    customBadge.textContent = `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "");
+  }
+
   function applyCustomTime() {
     timeControl = {
       id: "ozel",
-      label: "Özel",
+      label: "Özel Süre",
       detail: `${customMinutes} dk`,
       base: Math.max(1, customMinutes) * 60,
       increment: Math.max(0, customIncrement)
@@ -653,6 +662,7 @@ export function PlayPage({ progress, sound }) {
     }
     customTimeBox.hidden = false;
     updateCustomInputs();
+    updateCustomBadge();
     startNewGame();
     timeNote.textContent = timeHint();
   }
@@ -667,35 +677,60 @@ export function PlayPage({ progress, sound }) {
     applyCustomTime();
   }
 
-  const timeButtonsContainer = el("div", { className: "segmented play-times" });
+  const timeButtonsContainer = el("div", { className: "duel-time-grid" });
 
-  const timeButtons = TIME_CONTROLS.map((option) =>
-    el("button", {
-      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+  const timeButtons = TIME_CONTROLS.map((option) => {
+    if (option.id === "ozel") {
+      return el("button", {
+        className: `time-btn custom-opt ${option.id === timeControl.id ? "active" : ""}`,
+        type: "button",
+        "data-time": "ozel",
+        title: "Özel süre — istediğin dakikayı kendin belirle",
+        onClick: () => {
+          sound.play("click");
+          applyCustomTime();
+        }
+      }, [
+        el("div", { className: "custom-opt-left" }, [
+          el("span", { className: "time-btn-icon", text: option.icon }),
+          el("div", { className: "custom-opt-texts" }, [
+            el("strong", { text: "Özel Süre" }),
+            el("small", { text: "İstediğin süreyi belirle" })
+          ])
+        ]),
+        customBadge
+      ]);
+    }
+
+    return el("button", {
+      className: `time-btn ${option.id === timeControl.id ? "active" : ""}`,
       type: "button",
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
         sound.play("click");
-        if (option.id === "ozel") {
-          applyCustomTime();
-        } else {
-          timeControl = option;
-          customTimeBox.hidden = true;
-          if (option.base > 0) {
-            customMinutes = Math.floor(option.base / 60);
-            customIncrement = option.increment;
-            updateCustomInputs();
-          }
-          for (const button of timeButtonsContainer.children) {
-            button.classList.toggle("active", button.dataset.time === option.id);
-          }
-          startNewGame();
-          timeNote.textContent = timeHint();
+        timeControl = option;
+        customTimeBox.hidden = true;
+        if (option.base > 0) {
+          customMinutes = Math.floor(option.base / 60);
+          customIncrement = option.increment;
+          updateCustomInputs();
+          updateCustomBadge();
         }
+        for (const button of timeButtonsContainer.children) {
+          button.classList.toggle("active", button.dataset.time === option.id);
+        }
+        startNewGame();
+        timeNote.textContent = timeHint();
       }
-    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
-  );
+    }, [
+      el("div", { className: "time-btn-head" }, [
+        el("span", { className: "time-btn-icon", text: option.icon }),
+        el("strong", { text: option.label })
+      ]),
+      el("small", { text: option.detail })
+    ]);
+  });
   timeButtonsContainer.append(...timeButtons);
   timeNote.textContent = timeHint();
 

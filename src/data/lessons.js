@@ -10,6 +10,8 @@
 export const navItems = [
   ["home", "Ana Menü", "home"],
   ["plan", "Ders Programı", "book"],
+  ["siniflar", "Sınıflarım", "school"],
+  ["turnuva", "Turnuva", "trophy"],
   ["learn", "Satrancı Öğren", "sparkles"],
   ["board", "Satranç Tahtası", "board"],
   ["pieces", "Taşları Öğren", "pawn"],

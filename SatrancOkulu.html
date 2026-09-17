@@ -15,7 +15,7 @@
 
   Otomatik üretilmiştir (tools/build-tek-dosya.py). Elle düzenlemeyin;
   değişiklikleri src/ altında yapıp aracı yeniden çalıştırın.
-  Üretim tarihi: 2026-09-14
+  Üretim tarihi: 2026-09-17
 -->
 <style>
 /* ===== src/styles/base.css ===== */
@@ -1143,17 +1143,195 @@ body.focus-mode .page-hero { display: none; }
 }
 
 /* ------------------------------------------------------------------ *
- * Özel Süre Ayarları (Ortak Bileşen)
+ * Satranç Saati ve Süre Seçici Kartları (Ortak Bileşen)
+ *
+ * Dar panellerde düğmelerin sıkışmasını önlemek için 2 sütunlu kart
+ * ızgarası kullanılır; "Özel Süre" kartı en altta tam genişlikte yer alır.
+ * ------------------------------------------------------------------ */
+
+.duel-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.time-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  min-height: 3.1rem;
+  border-radius: var(--r-sm, 0.85rem);
+  border: 2px solid var(--line-strong);
+  background: var(--panel, #ffffff);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 3px 0 rgba(38, 36, 80, 0.08);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 160ms ease, border-color 160ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.time-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 5px 0 rgba(38, 36, 80, 0.10);
+  background: var(--sun-soft, #fff0d4);
+}
+
+.time-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(38, 36, 80, 0.10);
+}
+
+/* Aktif / seçili tempo kartı */
+.time-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), #1dbda9);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 0 var(--primary-dark), 0 8px 18px rgba(18, 165, 148, 0.25);
+}
+
+.time-btn.active:hover {
+  background: linear-gradient(135deg, var(--primary), #1dbda9);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.time-btn-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.time-btn-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.time-btn strong {
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: inherit;
+  line-height: 1.2;
+}
+
+.time-btn small {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  padding-left: 1.35rem;
+  transition: color 140ms ease;
+}
+
+.time-btn.active small {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Tam genişlikte Özel Süre Kartı */
+.time-btn.custom-opt {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  gap: 0.6rem;
+}
+
+.custom-opt-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.custom-opt-left .time-btn-icon {
+  font-size: 1.1rem;
+}
+
+.custom-opt-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.custom-opt-texts strong {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: inherit;
+}
+
+.custom-opt-texts small {
+  padding-left: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.time-btn.active .custom-opt-texts small {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Özel Süre Rozeti (Örn: "3 dk + 2 sn") */
+.custom-opt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+  background: var(--primary-soft, #d6f5ef);
+  border: 1.5px solid rgba(18, 165, 148, 0.3);
+  color: var(--primary-dark, #0a7c6f);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 140ms ease;
+}
+
+.time-btn.active .custom-opt-badge {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* ------------------------------------------------------------------ *
+ * Özel Süre Ayar Çekmecesi
  * ------------------------------------------------------------------ */
 
 .duel-custom-time {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.6rem;
-  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 0.75rem;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--panel-2, #fffdf7);
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--r-md, 1.15rem);
+  box-shadow: 0 2px 8px rgba(38, 36, 80, 0.04);
+  animation: custom-time-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes custom-time-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .duel-custom-time[hidden] {
@@ -1163,108 +1341,140 @@ body.focus-mode .page-hero { display: none; }
 .custom-time-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .custom-time-label {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.74rem;
-  font-weight: 800;
+  font-size: 0.76rem;
+  font-weight: 900;
   color: var(--ink);
 }
 
 .custom-time-unit {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 800;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .custom-time-stepper {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .custom-time-btn {
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.2rem;
+  height: 2.2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 900;
-  border-radius: 0.55rem;
-  border: 1px solid var(--line);
-  background: var(--surface, #fff);
+  line-height: 1;
+  border-radius: 0.65rem;
+  border: 2px solid var(--line-strong);
+  background: var(--panel, #ffffff);
   color: var(--ink);
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  box-shadow: 0 3px 0 rgba(38, 36, 80, 0.08);
+  transition: transform 100ms ease, box-shadow 100ms ease, background 140ms ease, border-color 140ms ease;
 }
 
 .custom-time-btn:hover {
-  background: var(--primary-soft);
+  background: var(--sun-soft, #fff0d4);
   border-color: var(--primary);
-  color: var(--primary);
+  color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 rgba(38, 36, 80, 0.10);
 }
 
 .custom-time-btn:active {
-  transform: scale(0.92);
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(38, 36, 80, 0.08);
 }
 
 .custom-time-input {
   flex: 1;
   text-align: center;
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 1.15rem;
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
   padding: 0.35rem 0.5rem;
-  border-radius: 0.55rem;
-  border: 1.5px solid var(--line);
-  background: rgba(255, 255, 255, 0.95);
+  height: 2.2rem;
+  border-radius: 0.65rem;
+  border: 2px solid var(--line-strong);
+  background: var(--panel, #ffffff);
   color: var(--ink);
   min-width: 0;
+  box-shadow: inset 0 2px 4px rgba(38, 36, 80, 0.05);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .custom-time-input:focus {
   border-color: var(--primary);
-  outline: 2px solid var(--primary-soft);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 .custom-time-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.28rem;
 }
 
 .custom-chip {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 0.5rem;
-  border: 1px solid var(--line);
-  background: var(--surface, #fff);
+  padding: 0.22rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--panel, #ffffff);
   color: var(--muted);
   cursor: pointer;
   touch-action: manipulation;
-  transition: all 0.15s;
+  user-select: none;
+  box-shadow: 0 2px 0 rgba(38, 36, 80, 0.06);
+  transition: transform 100ms ease, box-shadow 100ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .custom-chip:hover {
   border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-soft);
+  color: var(--primary-dark);
+  background: var(--primary-soft, #d6f5ef);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 rgba(38, 36, 80, 0.08);
+}
+
+.custom-chip:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(38, 36, 80, 0.06);
 }
 
 .custom-chip.active {
   background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-  font-weight: 800;
+  border-color: var(--primary-dark);
+  color: #ffffff;
+  font-weight: 900;
+  box-shadow: 0 2px 0 var(--primary-dark);
 }
+
+.duel-time-note,
+.play-time-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 0 0.15rem;
+}
+
 
 
 /* ===== src/styles/board.css ===== */
@@ -2311,26 +2521,7 @@ body.focus-mode .play-board .cb-stage {
 .play-settings .seg-button strong { font-size: 0.78rem; }
 .play-settings .seg-button small { font-size: 0.72rem; }
 
-.play-times .seg-button {
-  flex: 1 1 0;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.05rem;
-  min-height: 2.3rem;
-  padding: 0.3rem 0.2rem;
-  text-align: center;
-}
 
-.play-times .seg-button strong { font-size: 0.74rem; }
-.play-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
-
-.play-time-note {
-  margin: 0.1rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--muted);
-  font-weight: 700;
-}
 
 /* --- Daha sıkı durum ve öğretmen kutusu --- */
 
@@ -2825,150 +3016,9 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 
 .duel-quick .icon { width: 0.95rem; height: 0.95rem; }
 
-/* --- Kurulum: satranç saati seçimi --- */
-
-/* Beş tempo (özel süre dahil) dar panele sığsın diye başlık ve açıklama alt alta gelir. */
-.duel-times .seg-button {
-  flex: 1 1 0;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.05rem;
-  min-height: 2.4rem;
-  padding: 0.3rem 0.2rem;
-  text-align: center;
-}
-
-.duel-times .seg-button strong { font-size: 0.76rem; }
-.duel-times .seg-button small { font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
-
-/* Özel süre ayar kutusu */
-.duel-custom-time {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.6rem;
-  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 0.75rem;
-}
-
-.duel-custom-time[hidden] {
-  display: none;
-}
-
-.custom-time-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.custom-time-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.custom-time-unit {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.custom-time-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.custom-time-btn {
-  width: 2.1rem;
-  height: 2.1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  font-weight: 900;
-  border-radius: 0.55rem;
-  border: 1px solid var(--line);
-  background: var(--surface, #fff);
-  color: var(--ink);
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-}
-
-.custom-time-btn:hover {
-  background: var(--primary-soft);
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.custom-time-btn:active {
-  transform: scale(0.92);
-}
-
-.custom-time-input {
-  flex: 1;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  padding: 0.35rem 0.5rem;
-  border-radius: 0.55rem;
-  border: 1.5px solid var(--line);
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--ink);
-  min-width: 0;
-}
-
-.custom-time-input:focus {
-  border-color: var(--primary);
-  outline: 2px solid var(--primary-soft);
-}
-
-.custom-time-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.custom-chip {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: 0.5rem;
-  border: 1px solid var(--line);
-  background: var(--surface, #fff);
-  color: var(--muted);
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: all 0.15s;
-}
-
-.custom-chip:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-soft);
-}
-
-.custom-chip.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-  font-weight: 800;
-}
-
-.duel-time-note {
-  margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--muted);
-  font-weight: 700;
-}
+/* --- Kurulum: satranç saati seçimi ---
+   Ortak bileşen kuralları (.duel-time-grid, .time-btn, .duel-custom-time, .duel-time-note)
+   components.css içinde tanımlıdır. */
 
 .duel-names {
   display: grid;
@@ -4346,6 +4396,96 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
   color: #fff;
 }
 
+/* ================================================================== *
+ * Satranç Tahtası › Kurulum — tahtanın yanındaki taş rafı
+ * ================================================================== */
+
+.setup-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.setup-row .cb-root { flex: 1; min-width: 0; }
+
+.setup-tray {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.55rem;
+  border-radius: 1rem;
+  background: rgba(47, 143, 131, 0.08);
+  border: 1px solid var(--line);
+}
+
+.setup-tray[hidden] { display: none; }
+
+.setup-tray-columns {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.4rem;
+}
+
+.setup-tray-column { display: grid; gap: 0.3rem; align-content: start; }
+
+.setup-tray-title {
+  margin: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.setup-piece {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  border-radius: 0.7rem;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms ease, opacity 160ms ease;
+}
+
+.setup-piece:hover:not(:disabled) { transform: translateY(-2px); }
+
+.setup-piece.selected {
+  border-color: var(--primary);
+  background: rgba(255, 184, 77, 0.22);
+  transform: scale(1.06);
+}
+
+.setup-piece:disabled { opacity: 0.3; cursor: default; }
+
+.setup-piece-glyph { display: block; width: min(2.3rem, 6vh); height: min(2.3rem, 6vh); }
+.setup-piece-glyph svg { width: 100%; height: 100%; }
+
+.setup-piece-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 999px;
+  padding: 0.05rem 0.32rem;
+}
+
+.setup-tray-actions { display: grid; gap: 0.3rem; }
+.setup-tray-actions button { justify-content: center; }
+
+/* Dar ekranda raf tahtanın altına iner ve yatay dizilir. */
+@media (max-width: 640px) {
+  .setup-row { flex-direction: column; align-items: stretch; }
+  .setup-tray-columns { grid-template-columns: 1fr; }
+  .setup-tray-column { grid-template-columns: 3.2rem repeat(6, 1fr); align-items: center; }
+  .setup-piece-glyph { width: 1.9rem; height: 1.9rem; }
+  .setup-tray-actions { grid-template-columns: 1fr 1fr; }
+}
+
 
 /* ===== src/styles/plan.css ===== */
 /**
@@ -4819,6 +4959,441 @@ body.focus-mode .duel-panel { padding: 0.7rem; }
 @media (max-width: 560px) {
   .next-week-card { padding: 0.9rem; }
   .next-week-button { width: 100%; justify-content: center; }
+}
+
+
+/* ===== src/styles/classes.css ===== */
+/* ==================================================================== *
+ * classes.css — Sınıflarım, Turnuva ve üst çubuktaki sınıf seçicisi
+ *
+ * Öğretmen ekranlarıdır; çocuk ekranlarındaki iri düğmeler yerine daha
+ * yoğun ama yine aynı "yuvarlak kart" dilini kullanır.
+ * ==================================================================== */
+
+/* --- Üst çubuk: aktif sınıf --- */
+
+.class-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.6rem;
+  padding: 0 0.3rem 0 0.75rem;
+  border-radius: 999px;
+  background: var(--sun-soft);
+  border: 2px solid rgba(221, 139, 0, 0.28);
+  color: var(--ink);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.class-picker-select {
+  font: inherit;
+  font-weight: 900;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0.3rem 0.2rem;
+  max-width: 11rem;
+  cursor: pointer;
+}
+
+.class-picker-select:focus-visible { outline: 2px solid var(--primary); border-radius: 0.5rem; }
+
+/* --- Ortak parçalar --- */
+
+.class-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.36fr) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.class-sidebar, .class-main, .tour-host { display: grid; gap: 0.9rem; min-width: 0; }
+
+.class-card {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.class-card-title { margin: 0; font-size: 1.05rem; color: var(--ink); }
+.class-hint { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+.class-empty { margin: 0; font-size: 0.88rem; color: var(--muted); }
+
+.class-input, .class-textarea, .class-select {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 2px solid var(--line-strong);
+  border-radius: 0.8rem;
+  padding: 0.5rem 0.7rem;
+  min-width: 0;
+}
+
+.class-input:focus, .class-textarea:focus, .class-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.class-textarea { width: 100%; resize: vertical; line-height: 1.5; }
+
+.class-add { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+.class-add .class-input { flex: 1 1 9rem; }
+
+.class-row-buttons { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0.2rem 0.3rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--sky-dark);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  justify-self: start;
+}
+
+.danger-text { color: var(--coral-dark) !important; }
+
+.class-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.class-icon-btn:hover { background: var(--sun-soft); }
+.class-icon-btn .icon { width: 1rem; height: 1rem; }
+
+/* --- Sınıf listesi --- */
+
+.class-list { display: grid; gap: 0.35rem; }
+
+.class-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, background 160ms ease;
+}
+
+.class-item:hover { transform: translateX(2px); background: var(--sun-soft); }
+.class-item small { color: var(--muted); font-weight: 700; }
+
+.class-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--grape), var(--sky));
+  border-color: transparent;
+}
+
+.class-item.active small { color: rgba(255, 255, 255, 0.85); }
+
+.class-welcome { justify-items: center; text-align: center; padding: 2rem 1.2rem; }
+.class-welcome h2, .class-welcome p { margin: 0; }
+.class-welcome p { color: var(--muted); max-width: 34rem; line-height: 1.5; }
+.class-welcome-emoji { font-size: 3rem; }
+
+.class-head { grid-template-columns: 1fr; }
+.class-head-title { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.class-head-title h2 { margin: 0; font-size: 1.5rem; }
+.class-count { font-weight: 800; color: var(--muted); font-size: 0.85rem; }
+
+.class-bulk { display: grid; gap: 0.5rem; }
+
+/* --- Tablolar --- */
+
+.class-table-wrap { overflow-x: auto; }
+
+.class-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+.class-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding: 0.4rem 0.5rem;
+  border-bottom: 2px solid var(--line);
+}
+
+.class-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); }
+.class-table tbody tr { cursor: pointer; }
+.class-table tbody tr:hover { background: var(--sun-soft); }
+.class-table tr.selected { background: var(--grape-soft); }
+.class-table tr.withdrawn td { color: var(--muted); text-decoration: line-through; }
+.class-table tr.withdrawn td.actions { text-decoration: none; }
+.class-table .num { text-align: center; font-variant-numeric: tabular-nums; width: 3rem; }
+.class-table th:nth-child(n+3) { text-align: center; }
+.class-table .name { font-weight: 800; min-width: 9rem; }
+.class-table .strong { font-weight: 900; color: var(--grape-dark); }
+.class-table .actions { white-space: nowrap; text-align: right; width: 1%; }
+.class-table .actions .class-icon-btn + .class-icon-btn { margin-left: 0.3rem; }
+
+/* --- Öğrenci kartı --- */
+
+.class-student { border-color: rgba(123, 92, 240, 0.35); }
+.class-student-head { display: flex; justify-content: space-between; align-items: center; }
+
+.class-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 0.45rem; }
+
+.class-stat {
+  display: grid;
+  justify-items: center;
+  padding: 0.5rem;
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+
+.class-stat strong { font-size: 1.35rem; color: var(--ink); }
+.class-stat span { font-size: 0.72rem; font-weight: 800; color: var(--muted); }
+
+.class-matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; max-height: 22rem; overflow-y: auto; }
+
+.class-match {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+
+.class-match-body { display: grid; flex: 1; min-width: 0; }
+.class-match-body strong { font-size: 0.86rem; }
+.class-match-body small { font-size: 0.74rem; color: var(--muted); }
+
+.class-outcome {
+  flex: none;
+  min-width: 5.2rem;
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 0.25rem 0.4rem;
+  border-radius: 999px;
+}
+
+.class-outcome.win { background: var(--lime-soft); color: var(--lime-dark); }
+.class-outcome.loss { background: var(--coral-soft); color: var(--coral-dark); }
+.class-outcome.draw { background: var(--sky-soft); color: var(--sky-dark); }
+
+.class-manual { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
+.class-manual .class-select { flex: 1 1 10rem; }
+.class-vs { font-weight: 900; color: var(--muted); }
+
+/* ==================================================================== *
+ * Turnuva
+ * ==================================================================== */
+
+.tour-form { display: grid; grid-template-columns: 1fr 8rem; gap: 0.7rem; align-items: end; }
+.tour-form > .primary { grid-column: 1 / -1; justify-self: start; }
+.tour-field { display: grid; gap: 0.3rem; font-size: 0.8rem; font-weight: 800; color: var(--muted); }
+.tour-field.wide { grid-column: 1 / -1; }
+.tour-rounds-input { width: 100%; }
+
+.tour-check-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.tour-check-head .class-hint { margin-right: auto; }
+
+.tour-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.3rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 0.2rem;
+}
+
+.tour-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.7rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.tour-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--primary); }
+
+.tour-list { display: grid; gap: 0.4rem; }
+
+.tour-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tour-list-item:hover { background: var(--sun-soft); }
+.tour-list-emoji { font-size: 1.6rem; }
+.tour-list-body { display: grid; }
+.tour-list-body small { color: var(--muted); font-weight: 700; }
+
+.tour-head { grid-template-columns: auto 1fr; align-items: center; }
+.tour-head > .class-row-buttons { grid-column: 1 / -1; }
+.tour-head-title h2 { margin: 0; font-size: 1.35rem; }
+.tour-head-title small { color: var(--muted); font-weight: 700; }
+
+.tour-tabs { margin: 0; }
+
+.tour-boards { display: grid; gap: 0.45rem; }
+
+.tour-board {
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--r-md);
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+}
+
+.tour-board.done { border-color: rgba(92, 199, 76, 0.45); background: #f6fdf3; }
+.tour-board.bye { grid-template-columns: 4.2rem auto 1fr; }
+
+.tour-table-no { font-size: 0.74rem; font-weight: 900; color: var(--muted); text-transform: uppercase; }
+.tour-side { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.tour-side.black { justify-content: flex-end; text-align: right; }
+.tour-color { font-size: 1.5rem; line-height: 1; }
+.tour-player { display: grid; min-width: 0; }
+.tour-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tour-player small { font-size: 0.72rem; color: var(--muted); font-weight: 700; }
+.tour-bye-note { font-size: 0.82rem; color: var(--muted); }
+
+.tour-results { display: inline-flex; border-radius: 999px; overflow: hidden; border: 2px solid var(--line-strong); }
+
+.tour-result {
+  font: inherit;
+  font-weight: 900;
+  font-size: 0.85rem;
+  min-width: 3rem;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tour-result + .tour-result { border-left: 1px solid var(--line-strong); }
+.tour-result:hover:not(:disabled) { background: var(--sun-soft); }
+.tour-result.active { color: #fff; background: linear-gradient(135deg, var(--primary), var(--sky)); }
+.tour-result:disabled { cursor: default; }
+
+.tour-play { white-space: nowrap; }
+
+.tour-podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 0.5rem;
+  max-width: 30rem;
+  margin: 0 auto 0.4rem;
+}
+
+.tour-podium-step {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 0.6rem 0.4rem;
+  border-radius: var(--r-md) var(--r-md) 0.4rem 0.4rem;
+  background: var(--sun-soft);
+}
+
+.tour-podium-step.place-1 { order: 2; min-height: 8rem; background: linear-gradient(180deg, #ffe8a8, var(--sun-soft)); }
+.tour-podium-step.place-2 { order: 1; min-height: 6.6rem; }
+.tour-podium-step.place-3 { order: 3; min-height: 5.6rem; }
+.tour-medal { font-size: 2rem; }
+.tour-podium-step small { color: var(--muted); font-weight: 800; }
+
+.tour-late { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+/* ==================================================================== *
+ * İki Kişilik Oyun — öğrenci seçimi ve kayıt notu
+ * ==================================================================== */
+
+.duel-player-pick { display: grid; gap: 0.3rem; }
+.duel-player-select { cursor: pointer; }
+
+.duel-player-fixed {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.7rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+
+.duel-record-note {
+  margin: 0.1rem 0 0.2rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.duel-record-note.ok { color: var(--lime-dark); }
+.duel-record-note.warn { color: var(--coral-dark); }
+
+.duel-result-saved { font-size: 0.85rem; font-weight: 800; color: var(--muted); }
+.duel-result-saved.ok { color: var(--lime-dark); }
+
+.duel-end-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.duel-end-row .small { min-height: 2.1rem; padding: 0.3rem 0.65rem; font-size: 0.78rem; }
+
+/* --- Dar ekran --- */
+
+@media (max-width: 900px) {
+  .class-layout { grid-template-columns: 1fr; }
+  .tour-board { grid-template-columns: 1fr auto 1fr; }
+  .tour-board .tour-table-no { grid-column: 1 / -1; }
+  .tour-board .tour-play { grid-column: 1 / -1; justify-self: center; }
+  .tour-board.bye { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .class-picker-select { max-width: 6.5rem; }
+  .tour-form { grid-template-columns: 1fr; }
+  .tour-board { grid-template-columns: 1fr; justify-items: stretch; }
+  .tour-side.black { justify-content: flex-start; flex-direction: row-reverse; text-align: left; }
+  .tour-results { justify-self: center; }
 }
 
 
@@ -5534,6 +6109,8 @@ if (typeof window !== "undefined") {
 const navItems = [
   ["home", "Ana Menü", "home"],
   ["plan", "Ders Programı", "book"],
+  ["siniflar", "Sınıflarım", "school"],
+  ["turnuva", "Turnuva", "trophy"],
   ["learn", "Satrancı Öğren", "sparkles"],
   ["board", "Satranç Tahtası", "board"],
   ["pieces", "Taşları Öğren", "pawn"],
@@ -8170,7 +8747,10 @@ const paths = {
   // Satranç saati: kadran, duraklat ve devam et
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3.5 2",
   pause: "M9 5v14M15 5v14",
-  play: "M8 5l11 7-11 7z"
+  play: "M8 5l11 7-11 7z",
+  // Sınıf (okul binası) ve turnuva kupası
+  school: "M3 21h18M5 21V10l7-5 7 5v11M10 21v-5h4v5M12 9.5h.01",
+  trophy: "M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9.5 17h5"
 };
 
 function icon(name, className = "icon") {
@@ -10648,13 +11228,68 @@ function ChessBoard({
 
 const { el } = __yukle("src/utils/dom.js");
 const { routeParam } = __yukle("src/utils/router.js");
-const { Chess, SQUARE_LIST, toAlgebraic, isLightSquare, toSquare } = __yukle("src/engine/Chess.js");
+const { Chess, SQUARE_LIST, toAlgebraic, isLightSquare, toSquare, PIECE_NAMES_TR } = __yukle("src/engine/Chess.js");
 const { ChessBoard } = __yukle("src/components/ChessBoard.js");
 const { icon } = __yukle("src/components/Icon.js");
+const { pieceHTML } = __yukle("src/components/PieceGlyph.js");
 const { pageShell } = __yukle("src/pages/pageUtils.js");
 const EMPTY = "8/8/8/8/8/8/8/8 w - - 0 1";
-const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const FILES = "abcdefgh".split("");
+
+/** Başlangıç dizilişinde arka sıradaki her sütunun sahibi (iki renk için aynı). */
+const HOME = { a: "r", b: "n", c: "b", d: "q", e: "k", f: "b", g: "n", h: "r" };
+
+/** Kurulum rafındaki taşlar ve adetleri; raf bu sırayla dizilir. */
+const TRAY = [["p", 8], ["r", 2], ["n", 2], ["b", 2], ["q", 1], ["k", 1]];
+
+/** "kale" → "Kale". */
+const capitalize = (word) => word.charAt(0).toLocaleUpperCase("tr") + word.slice(1);
+
+/** Taş haritasından ({ e1: "wk" }) FEN üretir. */
+function toFen(pieces) {
+  const rows = [];
+  for (let rank = 8; rank >= 1; rank -= 1) {
+    let row = "";
+    let empty = 0;
+    for (const file of FILES) {
+      const code = pieces[`${file}${rank}`];
+      if (code) {
+        if (empty) row += empty;
+        empty = 0;
+        row += code[0] === "w" ? code[1].toUpperCase() : code[1];
+      } else empty += 1;
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} w - - 0 1`;
+}
+
+/** Taş ("wq") bu kareye mi ait? */
+function belongsTo(code, square) {
+  const [color, type] = code;
+  const rank = square[1];
+  if (type === "p") return rank === (color === "w" ? "2" : "7");
+  return rank === (color === "w" ? "1" : "8") && HOME[square[0]] === type;
+}
+
+/**
+ * Yanlış yerleştirmede KURALI hatırlatan cümle; kareyi çocuk kendisi bulur.
+ */
+function setupHint(code) {
+  const [color, type] = code;
+  const back = color === "w" ? 1 : 8;
+  switch (type) {
+    case "p": return `Piyonlar ordunun en önünde, ${color === "w" ? 2 : 7}. yatayda yan yana dizilir.`;
+    case "r": return `Kaleler tahtanın köşelerinde durur: a${back} ve h${back}.`;
+    case "n": return `Atlar kalelerin hemen yanında durur: b${back} ve g${back}.`;
+    case "b": return `Filler atların yanında durur: c${back} ve f${back}.`;
+    case "q": return color === "w"
+      ? "Vezir kendi rengini sever: beyaz vezir açık kare olan d1'e oturur."
+      : "Vezir kendi rengini sever: siyah vezir koyu kare olan d8'e oturur.";
+    default: return `Şah, vezirin yanındaki kareye oturur: e${back}.`;
+  }
+}
 
 /** Tüm kare adları. */
 const ALL = SQUARE_LIST.map(toAlgebraic);
@@ -10665,9 +11300,14 @@ function BoardPage({ progress, sound }) {
   let quizTarget = null;
   let quizScore = 0;
 
+  // Kurulum dersi: tahtaya konan taşlar ve rafta seçili taş.
+  let placed = {};
+  let brush = null;
+
   const tabRow = el("div", { className: "stage-row" });
   const status = el("p", { className: "lesson-status", text: "" });
   const infoPanel = el("aside", { className: "lesson-panel" });
+  const trayNode = el("div", { className: "setup-tray", hidden: true });
 
   const board = ChessBoard({
     chess: new Chess(EMPTY),
@@ -10789,27 +11429,133 @@ function BoardPage({ progress, sound }) {
       title: "Kurulum",
       heading: "Tahta nasıl kurulur?",
       detail:
-        "Altın kural: SAĞ ALT KÖŞE BEYAZ olmalı (h1 açık karedir). Kaleler köşelere, atlar yanlarına, filler onların yanına gelir. Vezir kendi rengindeki kareye oturur, şah da yanına. Piyonlar en öne dizilir.",
+        "Altın kural: SAĞ ALT KÖŞE BEYAZ olmalı (h1 açık karedir). Kaleler köşelere, atlar yanlarına, filler onların yanına gelir. Vezir kendi rengindeki kareye oturur, şah da yanına. Piyonlar en öne dizilir. Yandaki raftan taş seç ve evine dokun!",
+      tray: true,
       setup() {
-        board.attach(new Chess(START));
-        board.setMarks(["h1", "d1", "e1"]);
-        say("Başlangıç dizilişi. Vezir d1'de (beyaz vezir açık karede), şah e1'de, sağ alt köşe h1 açık renkte.");
+        placed = {};
+        brush = null;
+        drawSetup();
+        say("Tahta boş. Yandaki raftan bir taş seç, sonra ait olduğu kareye dokun.");
       },
       onClick(square) {
+        if (!brush) {
+          const code = placed[square];
+          say(
+            code
+              ? `${square.toUpperCase()} — ${code[0] === "w" ? "beyaz" : "siyah"} ${PIECE_NAMES_TR[code[1]]}.`
+              : "Önce yandaki raftan bir taş seç, sonra kareye dokun.",
+            code ? "info" : ""
+          );
+          return;
+        }
+        if (placed[square]) {
+          board.shake(square);
+          say(`${square.toUpperCase()} karesi dolu. Boş bir kare seç.`, "wrong");
+          return;
+        }
+
+        const name = capitalize(PIECE_NAMES_TR[brush[1]]);
+        if (!belongsTo(brush, square)) {
+          sound.play("error");
+          board.shake(square);
+          say(`${name} ${square.toUpperCase()} karesine gitmez. ${setupHint(brush)}`, "wrong");
+          return;
+        }
+
+        placed[square] = brush;
+        // Bu taştan rafta kalmadıysa seçim düşer; kalıyorsa (piyon, kale...) seçili
+        // kalır ki ikincisi için rafa dönmek gerekmesin.
+        if (remainingOf(brush) === 0) brush = null;
+        drawSetup();
+
+        const left = 32 - Object.keys(placed).length;
+        if (left === 0) {
+          sound.play("success");
+          say("🎉 Harika! 32 taşın hepsi yerinde. Sağ alt köşe (h1) açık kare mi? Evet — tahta doğru kuruldu!", "correct");
+          return;
+        }
         sound.play("move");
-        const notes = {
-          d1: "d1 — Vezir burada. 'Vezir kendi rengini sever': beyaz vezir açık karede durur.",
-          e1: "e1 — Şah burada, vezirin yanında.",
-          h1: "h1 — Sağ alt köşe. AÇIK renk olmalı; değilse tahta ters kurulmuştur!",
-          a1: "a1 — Kale köşede. Kaleler her zaman dört köşede başlar.",
-          b1: "b1 — At. Atlar kalelerin yanında durur.",
-          c1: "c1 — Fil. Filler atların yanında durur."
-        };
-        board.setMarks([square]);
-        say(notes[square] || `${square.toUpperCase()} karesi.`, "info");
+        say(`✅ Doğru! ${name} ${square.toUpperCase()} karesinde. ${left} taş kaldı.`, "correct");
       }
     }
   ];
+
+  /** Bir taştan rafta kaç tane kaldığını söyler. */
+  function remainingOf(code) {
+    const total = TRAY.find(([type]) => type === code[1])[1];
+    return total - Object.values(placed).filter((value) => value === code).length;
+  }
+
+  /** Kurulum dersinde tahtayı ve taş rafını tazeler. */
+  function drawSetup() {
+    board.attach(new Chess(toFen(placed)));
+    board.setMarks([]);
+
+    const column = (color) =>
+      el("div", { className: "setup-tray-column" }, [
+        el("p", { className: "setup-tray-title", text: color === "w" ? "Beyaz" : "Siyah" }),
+        ...TRAY.map(([type]) => {
+          const code = color + type;
+          const left = remainingOf(code);
+          return el("button", {
+            className: `setup-piece ${brush === code ? "selected" : ""}`,
+            type: "button",
+            disabled: left === 0 ? "" : null,
+            "aria-label": `${color === "w" ? "Beyaz" : "Siyah"} ${PIECE_NAMES_TR[type]} seç, ${left} tane kaldı`,
+            "aria-pressed": brush === code ? "true" : "false",
+            title: capitalize(PIECE_NAMES_TR[type]),
+            onClick: () => {
+              sound.play("click");
+              brush = brush === code ? null : code;
+              drawSetup();
+              if (brush) say(`${color === "w" ? "Beyaz" : "Siyah"} ${PIECE_NAMES_TR[type]} seçildi. Şimdi evine dokun.`);
+            }
+          }, [
+            el("span", { className: "setup-piece-glyph", html: pieceHTML(code) }),
+            el("span", { className: "setup-piece-count", text: `×${left}` })
+          ]);
+        })
+      ]);
+
+    trayNode.replaceChildren(
+      el("div", { className: "setup-tray-columns" }, [column("w"), column("b")]),
+      el("div", { className: "setup-tray-actions" }, [
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: "Baştan Diz",
+          onClick: () => {
+            sound.play("click");
+            lessons[lessonIndex].setup();
+          }
+        }),
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: "Doğrusunu Göster",
+          onClick: () => {
+            sound.play("click");
+            placed = startPlacement();
+            brush = null;
+            drawSetup();
+            say("Başlangıç dizilişi bu. Vezir d1'de (beyaz vezir açık karede), şah e1'de, sağ alt köşe h1 açık renkte.", "info");
+          }
+        })
+      ])
+    );
+  }
+
+  /** Başlangıç dizilişinin taş haritası. */
+  function startPlacement() {
+    const pieces = {};
+    for (const file of FILES) {
+      pieces[`${file}1`] = `w${HOME[file]}`;
+      pieces[`${file}2`] = "wp";
+      pieces[`${file}7`] = "bp";
+      pieces[`${file}8`] = `b${HOME[file]}`;
+    }
+    return pieces;
+  }
 
   /** Kare rengi oyununda yeni soru üretir. */
   function newColorQuiz() {
@@ -10872,6 +11618,8 @@ function BoardPage({ progress, sound }) {
 
   function showLesson() {
     quizTarget = null;
+    brush = null;
+    trayNode.hidden = !lessons[lessonIndex].tray;
     renderTabs();
     renderInfo();
     lessons[lessonIndex].setup();
@@ -10884,7 +11632,11 @@ function BoardPage({ progress, sound }) {
     "8x8 = 64 kare. Koordinatları öğrenmek satrancın alfabesidir — her karenin adını bilmeden hamle konuşulamaz.",
     [
       el("section", { className: "lesson-layout" }, [
-        el("div", { className: "lesson-main" }, [tabRow, board.element, status]),
+        el("div", { className: "lesson-main" }, [
+          tabRow,
+          el("div", { className: "setup-row" }, [board.element, trayNode]),
+          status
+        ]),
         infoPanel
       ])
     ],
@@ -47320,11 +48072,11 @@ const { burst } = __yukle("src/animations/effects.js");
 const { pageShell, focusToggle } = __yukle("src/pages/pageUtils.js");
 const { sanTr } = __yukle("src/engine/Chess.js");
 const TIME_CONTROLS = [
-  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
-  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
-  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
-  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+  { id: "yok", label: "Süresiz", detail: "Saat yok", icon: "⚪", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", icon: "⚡", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", icon: "🏃", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", icon: "🏆", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel Süre", detail: "Kendin belirle", icon: "⚙️", base: 180, increment: 2 }
 ];
 
 function clockText(ms) {
@@ -47939,10 +48691,19 @@ function PlayPage({ progress, sound }) {
     ])
   ]);
 
+  const customBadge = el("span", {
+    className: "custom-opt-badge",
+    text: `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "")
+  });
+
+  function updateCustomBadge() {
+    customBadge.textContent = `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "");
+  }
+
   function applyCustomTime() {
     timeControl = {
       id: "ozel",
-      label: "Özel",
+      label: "Özel Süre",
       detail: `${customMinutes} dk`,
       base: Math.max(1, customMinutes) * 60,
       increment: Math.max(0, customIncrement)
@@ -47952,6 +48713,7 @@ function PlayPage({ progress, sound }) {
     }
     customTimeBox.hidden = false;
     updateCustomInputs();
+    updateCustomBadge();
     startNewGame();
     timeNote.textContent = timeHint();
   }
@@ -47966,35 +48728,60 @@ function PlayPage({ progress, sound }) {
     applyCustomTime();
   }
 
-  const timeButtonsContainer = el("div", { className: "segmented play-times" });
+  const timeButtonsContainer = el("div", { className: "duel-time-grid" });
 
-  const timeButtons = TIME_CONTROLS.map((option) =>
-    el("button", {
-      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+  const timeButtons = TIME_CONTROLS.map((option) => {
+    if (option.id === "ozel") {
+      return el("button", {
+        className: `time-btn custom-opt ${option.id === timeControl.id ? "active" : ""}`,
+        type: "button",
+        "data-time": "ozel",
+        title: "Özel süre — istediğin dakikayı kendin belirle",
+        onClick: () => {
+          sound.play("click");
+          applyCustomTime();
+        }
+      }, [
+        el("div", { className: "custom-opt-left" }, [
+          el("span", { className: "time-btn-icon", text: option.icon }),
+          el("div", { className: "custom-opt-texts" }, [
+            el("strong", { text: "Özel Süre" }),
+            el("small", { text: "İstediğin süreyi belirle" })
+          ])
+        ]),
+        customBadge
+      ]);
+    }
+
+    return el("button", {
+      className: `time-btn ${option.id === timeControl.id ? "active" : ""}`,
       type: "button",
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
         sound.play("click");
-        if (option.id === "ozel") {
-          applyCustomTime();
-        } else {
-          timeControl = option;
-          customTimeBox.hidden = true;
-          if (option.base > 0) {
-            customMinutes = Math.floor(option.base / 60);
-            customIncrement = option.increment;
-            updateCustomInputs();
-          }
-          for (const button of timeButtonsContainer.children) {
-            button.classList.toggle("active", button.dataset.time === option.id);
-          }
-          startNewGame();
-          timeNote.textContent = timeHint();
+        timeControl = option;
+        customTimeBox.hidden = true;
+        if (option.base > 0) {
+          customMinutes = Math.floor(option.base / 60);
+          customIncrement = option.increment;
+          updateCustomInputs();
+          updateCustomBadge();
         }
+        for (const button of timeButtonsContainer.children) {
+          button.classList.toggle("active", button.dataset.time === option.id);
+        }
+        startNewGame();
+        timeNote.textContent = timeHint();
       }
-    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
-  );
+    }, [
+      el("div", { className: "time-btn-head" }, [
+        el("span", { className: "time-btn-icon", text: option.icon }),
+        el("strong", { text: option.label })
+      ]),
+      el("small", { text: option.detail })
+    ]);
+  });
   timeButtonsContainer.append(...timeButtons);
   timeNote.textContent = timeHint();
 
@@ -48047,6 +48834,711 @@ function PlayPage({ progress, sound }) {
   Object.defineProperty(__d, "PlayPage", { get: () => PlayPage, enumerable: true });
 },
 
+"src/services/SwissPairing.js": function (__d) {
+/**
+ * SwissPairing.js — İsviçre sistemi puan tablosu ve eşleştirme.
+ *
+ * Okul turnuvası için sadeleştirilmiş Hollanda (Dutch) yöntemi:
+ *   • Oyuncular puana göre sıralanır; eşit puanlılar aynı gruptadır.
+ *   • Grubun üst yarısı alt yarısıyla eşleşir (1.–5., 2.–6. ... gibi).
+ *   • Aynı iki oyuncu ikinci kez karşılaşmaz. İmkânsızsa (az kişi, çok tur)
+ *     tekrar eşleşmeye izin verilir — turnuva kilitlenmesin.
+ *   • Tek sayıda oyuncu varsa en alttaki, daha önce BAY almamış oyuncu bay
+ *     geçer ve 1 puan alır.
+ *   • Renkler dengelenir: daha az beyaz oynamış olan beyaz alır.
+ *
+ * Modül saf fonksiyonlardan oluşur; kayıt ve arayüz bilmez. Bu sayede
+ * ClassroomService dışında da (test, doğrulama) kullanılabilir.
+ */
+
+/** Sonuç kodu → beyazın aldığı puan. */
+const RESULT_POINTS = { "1-0": 1, "0-1": 0, "½-½": 0.5 };
+
+/** Önerilen tur sayısı: kazananın netleşmesi için log2(n) + 1. */
+function suggestedRounds(playerCount) {
+  if (playerCount < 2) return 1;
+  return Math.max(1, Math.min(playerCount - 1, Math.ceil(Math.log2(playerCount)) + 1));
+}
+
+/**
+ * Oyuncu başına özet çıkarır.
+ *
+ * @param {string[]} playerIds Turnuvadaki oyuncular (başlangıç sırası = seed).
+ * @param {Array<Array<{whiteId:string, blackId:string|null, result:string|null}>>} rounds
+ *        Her tur için masalar. `blackId === null` bay demektir; `result` henüz
+ *        girilmediyse null'dır.
+ * @returns {Map<string, object>} id → { points, wins, draws, losses, byes, opponents, colors, seed, buchholz }
+ */
+function tally(playerIds, rounds) {
+  const rows = new Map(
+    playerIds.map((id, seed) => [
+      id,
+      { id, seed, points: 0, wins: 0, draws: 0, losses: 0, byes: 0, played: 0, opponents: [], colors: [], buchholz: 0 }
+    ])
+  );
+
+  for (const round of rounds) {
+    for (const board of round) {
+      const white = rows.get(board.whiteId);
+      if (board.blackId === null) {
+        if (white) {
+          white.byes += 1;
+          white.points += 1;
+        }
+        continue;
+      }
+      const black = rows.get(board.blackId);
+      // Eşleşme yapıldıysa sonuç girilmemiş olsa bile tekrar eşleşme sayılır.
+      if (white && black) {
+        white.opponents.push(black.id);
+        black.opponents.push(white.id);
+      }
+      if (white) white.colors.push("w");
+      if (black) black.colors.push("b");
+
+      if (!board.result) continue;
+      const whitePoints = RESULT_POINTS[board.result];
+      for (const [row, points] of [[white, whitePoints], [black, 1 - whitePoints]]) {
+        if (!row) continue;
+        row.played += 1;
+        row.points += points;
+        if (points === 1) row.wins += 1;
+        else if (points === 0) row.losses += 1;
+        else row.draws += 1;
+      }
+    }
+  }
+
+  // Buchholz: rakiplerin puan toplamı. Eşit puanda "kiminle oynadığın" belirleyicidir.
+  for (const row of rows.values()) {
+    row.buchholz = row.opponents.reduce((sum, id) => sum + (rows.get(id)?.points || 0), 0);
+  }
+  return rows;
+}
+
+/** Puan tablosu sırası: puan → Buchholz → galibiyet → başlangıç sırası. */
+function rankRows(rows) {
+  return [...rows].sort(
+    (a, b) => b.points - a.points || b.buchholz - a.buchholz || b.wins - a.wins || a.seed - b.seed
+  );
+}
+
+/**
+ * Bir sonraki turun eşleşmelerini üretir.
+ *
+ * @param {string[]} activeIds Bu turda oynayacak oyuncular (çekilenler hariç).
+ * @param {Map<string, object>} rows tally() çıktısı.
+ * @returns {Array<{whiteId:string, blackId:string|null}>}
+ */
+function pairRound(activeIds, rows) {
+  // Eşleştirme sırası: puan, sonra başlangıç sırası. Buchholz burada
+  // kullanılmaz; eşleştirmenin öngörülebilir olması daha önemlidir.
+  const pool = activeIds
+    .map((id) => rows.get(id))
+    .filter(Boolean)
+    .sort((a, b) => b.points - a.points || a.seed - b.seed);
+
+  const toBoards = (pairs, bye) => [
+    ...pairs.map(([a, b], index) => colored(a, b, index)),
+    // Bay masası en sonda durur; masalar üst sıradakilerden başlar.
+    ...(bye ? [{ whiteId: bye.id, blackId: null }] : [])
+  ];
+
+  if (pool.length % 2 === 0) {
+    return toBoards(solve(pool, false) || solve(pool, true) || greedy(pool), null);
+  }
+
+  // Bay adayları: alttan yukarı, önce hiç bay almamışlar. Kalanlar tekrar
+  // eşleşmesiz eşleşebiliyorsa o aday seçilir; bay'ı körü körüne en alttakine
+  // vermek küçük gruplarda kaçınılabilir tekrar eşleşmelere yol açıyordu.
+  const byeOrder = [...pool].reverse().sort((a, b) => a.byes - b.byes);
+  const fewestByes = byeOrder[0].byes;
+  for (const bye of byeOrder.filter((row) => row.byes === fewestByes)) {
+    const pairs = solve(pool.filter((row) => row !== bye), false);
+    if (pairs) return toBoards(pairs, bye);
+  }
+  // Hiçbir aday tekrarsız çözüm vermedi. İkinci kez bay almak, bir rakiple
+  // yeniden oynamaktan daha kötüdür (çocuk o tur hiç oynamaz); bu yüzden
+  // bay yine hiç bay almamış en alttaki oyuncuya verilir.
+  const bye = byeOrder[0];
+  const rest = pool.filter((row) => row !== bye);
+  return toBoards(solve(rest, true) || greedy(rest), bye);
+}
+
+/**
+ * Geri izlemeli eşleştirme. Başarısızsa null döner.
+ * Adım sınırı, büyük ve kilitlenmiş durumlarda tarayıcının donmasını önler.
+ */
+function solve(players, allowRepeat) {
+  let steps = 0;
+
+  function walk(pool) {
+    if (pool.length === 0) return [];
+    if ((steps += 1) > 50000) return null;
+
+    const [top, ...rest] = pool;
+    let list = candidates(top, rest);
+    if (allowRepeat) {
+      // Tekrar kaçınılmazsa bile önce daha önce karşılaşmamış rakipler denenir.
+      list = [...list.filter((row) => !top.opponents.includes(row.id)), ...list.filter((row) => top.opponents.includes(row.id))];
+    } else {
+      list = list.filter((row) => !top.opponents.includes(row.id));
+    }
+    for (const candidate of list) {
+      const next = walk(rest.filter((row) => row !== candidate));
+      if (next) return [[top, candidate], ...next];
+    }
+    return null;
+  }
+
+  return walk(players);
+}
+
+/**
+ * `top` için rakip adaylarını tercih sırasına dizer.
+ *
+ * `top` her zaman kalan havuzun en üstündedir. Kendi puan grubunda grubun
+ * ORTASINDAKİ oyuncu ilk tercihtir (üst yarı – alt yarı eşleşmesi); oradan
+ * aşağı, sonra yukarı doğru gidilir. Gruptan kimse uymazsa bir alt puan
+ * grubuna inilir.
+ */
+function candidates(top, rest) {
+  const group = rest.filter((row) => row.points === top.points);
+  const others = rest.filter((row) => row.points !== top.points);
+  const start = Math.max(0, Math.floor((group.length + 1) / 2) - 1);
+  return [...group.slice(start), ...group.slice(0, start).reverse(), ...others];
+}
+
+/** Hiçbir yol bulunamazsa sırayla eşleştirir (pratikte ulaşılmaz). */
+function greedy(pool) {
+  const pairs = [];
+  for (let index = 0; index + 1 < pool.length; index += 2) pairs.push([pool[index], pool[index + 1]]);
+  return pairs;
+}
+
+/** Renk dengesi: az beyaz oynamış beyaz alır; eşitse son turda siyah olan. */
+function colored(a, b, boardIndex) {
+  const balance = (row) => row.colors.filter((c) => c === "w").length - row.colors.filter((c) => c === "b").length;
+  const diff = balance(a) - balance(b);
+  let aWhite;
+  if (diff !== 0) aWhite = diff < 0;
+  else {
+    const lastA = a.colors[a.colors.length - 1];
+    const lastB = b.colors[b.colors.length - 1];
+    if (lastA && lastB && lastA !== lastB) aWhite = lastA === "b";
+    // İlk tur ya da tam eşitlik: masalar dönüşümlü (1. masada üstteki beyaz).
+    else aWhite = boardIndex % 2 === 0;
+  }
+  return aWhite ? { whiteId: a.id, blackId: b.id } : { whiteId: b.id, blackId: a.id };
+}
+
+  Object.defineProperty(__d, "RESULT_POINTS", { get: () => RESULT_POINTS, enumerable: true });
+  Object.defineProperty(__d, "suggestedRounds", { get: () => suggestedRounds, enumerable: true });
+  Object.defineProperty(__d, "tally", { get: () => tally, enumerable: true });
+  Object.defineProperty(__d, "rankRows", { get: () => rankRows, enumerable: true });
+  Object.defineProperty(__d, "pairRound", { get: () => pairRound, enumerable: true });
+},
+
+"src/services/ClassroomService.js": function (__d) {
+/**
+ * ClassroomService.js — Sınıflar, öğrenciler, maç sonuçları ve turnuvalar.
+ *
+ * Öğretmen her sınıfın bilgisayarında uygulamayı açar; veriler o
+ * bilgisayardaki tarayıcıda (localStorage) kalır. İlerleme kaydından
+ * (ProgressService) AYRI bir anahtarda tutulur: çocuğun XP'sini sıfırlamak
+ * sınıf listesini silmemeli, sınıf yedeğini geri yüklemek de XP'ye dokunmamalı.
+ *
+ * Tek doğru kaynak MAÇ kayıtlarıdır. Galibiyet/beraberlik/mağlubiyet ve
+ * turnuva puanları her seferinde maçlardan HESAPLANIR; ayrıca saklanmaz.
+ * Böylece yanlış girilen bir maç silindiğinde bütün sayılar kendiliğinden
+ * düzelir.
+ *
+ * Öğrenci silindiğinde kayıt tamamen yok edilmez, `removed` işaretlenir:
+ * geçmiş maçlarda ve turnuva tablolarında adı görünmeye devam etmelidir.
+ */
+
+const { RESULT_POINTS, tally, rankRows, pairRound } = __yukle("src/services/SwissPairing.js");
+const KEY = "satranc-okulu-siniflar";
+const VERSION = 1;
+
+/** Kısa, çakışması pratikte imkânsız kimlik. */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+/** Türkçe alfabetik sıralama. */
+const byName = (a, b) => a.name.localeCompare(b.name, "tr");
+
+/** "  ali   YILMAZ " → "Ali Yılmaz". e-Okul listeleri çoğunlukla büyük harflidir. */
+function tidyName(raw) {
+  return String(raw || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((word) => word.charAt(0).toLocaleUpperCase("tr") + word.slice(1).toLocaleLowerCase("tr"))
+    .join(" ")
+    .slice(0, 40);
+}
+
+function emptyState() {
+  return { version: VERSION, activeClassId: null, classes: [], matches: [], tournaments: [] };
+}
+
+class ClassroomService {
+  constructor() {
+    this.state = this.load();
+    this.listeners = new Set();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Kayıt
+   * ---------------------------------------------------------------- */
+
+  load() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(KEY));
+      return ClassroomService.normalize(stored) || emptyState();
+    } catch {
+      return emptyState();
+    }
+  }
+
+  /** Dışarıdan gelen veriyi (kayıt ya da yedek dosyası) güvenli biçime sokar. */
+  static normalize(data) {
+    if (!data || typeof data !== "object" || !Array.isArray(data.classes)) return null;
+    const state = emptyState();
+    state.classes = data.classes
+      .filter((item) => item && item.id && item.name)
+      .map((item) => ({
+        id: String(item.id),
+        name: String(item.name),
+        students: (Array.isArray(item.students) ? item.students : [])
+          .filter((student) => student && student.id && student.name)
+          .map((student) => ({ id: String(student.id), name: String(student.name), removed: Boolean(student.removed) }))
+      }));
+    state.matches = Array.isArray(data.matches) ? data.matches.filter((match) => match && RESULT_POINTS[match.result] !== undefined) : [];
+    state.tournaments = Array.isArray(data.tournaments) ? data.tournaments.filter((t) => t && Array.isArray(t.rounds)) : [];
+    state.activeClassId = state.classes.some((item) => item.id === data.activeClassId) ? data.activeClassId : null;
+    return state;
+  }
+
+  /** Kaydeder ve dinleyicileri uyarır. Kota dolarsa uygulama çökmesin. */
+  save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(this.state));
+    } catch (error) {
+      console.warn("[sınıflar] kaydedilemedi:", error);
+    }
+    for (const listener of this.listeners) {
+      try {
+        listener(this.state);
+      } catch (error) {
+        console.warn("[sınıflar] dinleyici hatası:", error);
+      }
+    }
+  }
+
+  onChange(listener) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Sınıflar
+   * ---------------------------------------------------------------- */
+
+  get classes() {
+    return [...this.state.classes].sort(byName);
+  }
+
+  getClass(id) {
+    return this.state.classes.find((item) => item.id === id) || null;
+  }
+
+  get activeClass() {
+    return this.getClass(this.state.activeClassId);
+  }
+
+  setActiveClass(id) {
+    this.state.activeClassId = this.getClass(id) ? id : null;
+    this.save();
+  }
+
+  addClass(rawName) {
+    const name = String(rawName || "").replace(/\s+/g, " ").trim().slice(0, 30);
+    if (!name) return null;
+    const item = { id: uid(), name, students: [] };
+    this.state.classes.push(item);
+    // Yeni eklenen sınıf hemen seçilir; öğretmen öğrenci eklemeye geçecektir.
+    this.state.activeClassId = item.id;
+    this.save();
+    return item;
+  }
+
+  renameClass(id, rawName) {
+    const item = this.getClass(id);
+    const name = String(rawName || "").replace(/\s+/g, " ").trim().slice(0, 30);
+    if (!item || !name) return;
+    item.name = name;
+    this.save();
+  }
+
+  /** Sınıfı, maçlarını ve turnuvalarını siler. */
+  deleteClass(id) {
+    this.state.classes = this.state.classes.filter((item) => item.id !== id);
+    this.state.matches = this.state.matches.filter((match) => match.classId !== id);
+    this.state.tournaments = this.state.tournaments.filter((t) => t.classId !== id);
+    if (this.state.activeClassId === id) this.state.activeClassId = null;
+    this.save();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Öğrenciler
+   * ---------------------------------------------------------------- */
+
+  /** Sınıfın güncel (silinmemiş) öğrencileri, alfabetik. */
+  students(classId) {
+    return (this.getClass(classId)?.students || []).filter((student) => !student.removed).sort(byName);
+  }
+
+  /** Silinmiş olsa bile öğrenciyi bulur (geçmiş kayıtlarda ad gerekir). */
+  findStudent(studentId) {
+    for (const item of this.state.classes) {
+      const student = item.students.find((s) => s.id === studentId);
+      if (student) return student;
+    }
+    return null;
+  }
+
+  studentName(studentId) {
+    return this.findStudent(studentId)?.name || "Silinmiş öğrenci";
+  }
+
+  /**
+   * Bir ya da birden çok öğrenci ekler. Her satır bir öğrencidir; e-Okul'dan
+   * kopyalanan satır başındaki sıra/okul numarası atılır.
+   * @returns {{added:number, skipped:number}}
+   */
+  addStudents(classId, text) {
+    const item = this.getClass(classId);
+    if (!item) return { added: 0, skipped: 0 };
+
+    const existing = new Set(item.students.filter((s) => !s.removed).map((s) => s.name.toLocaleLowerCase("tr")));
+    let added = 0;
+    let skipped = 0;
+
+    for (const line of String(text).split(/\r?\n/)) {
+      const name = tidyName(line.replace(/^\s*\d+[\s.)\-\t]*/, "").replace(/\t+/g, " "));
+      if (!name) continue;
+      const key = name.toLocaleLowerCase("tr");
+      if (existing.has(key)) {
+        skipped += 1;
+        continue;
+      }
+      existing.add(key);
+      item.students.push({ id: uid(), name, removed: false });
+      added += 1;
+    }
+
+    if (added) this.save();
+    return { added, skipped };
+  }
+
+  renameStudent(studentId, rawName) {
+    const student = this.findStudent(studentId);
+    const name = tidyName(rawName);
+    if (!student || !name) return;
+    student.name = name;
+    this.save();
+  }
+
+  removeStudent(studentId) {
+    const student = this.findStudent(studentId);
+    if (!student) return;
+    student.removed = true;
+    this.save();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Maçlar
+   * ---------------------------------------------------------------- */
+
+  /**
+   * Maç sonucunu kaydeder.
+   * @param {object} data { classId, whiteId, blackId, result: "1-0"|"0-1"|"½-½",
+   *                        reason?, moves?, timeControl?, source?, tournamentId?, round? }
+   */
+  recordMatch(data) {
+    if (RESULT_POINTS[data.result] === undefined || !data.whiteId || !data.blackId || data.whiteId === data.blackId) {
+      return null;
+    }
+    const match = {
+      id: uid(),
+      date: new Date().toISOString(),
+      classId: data.classId,
+      whiteId: data.whiteId,
+      blackId: data.blackId,
+      result: data.result,
+      reason: data.reason || "",
+      moves: data.moves || 0,
+      timeControl: data.timeControl || "",
+      source: data.source || "duel",
+      tournamentId: data.tournamentId || null,
+      round: data.round || null
+    };
+    this.state.matches.push(match);
+    this.save();
+    return match;
+  }
+
+  deleteMatch(matchId) {
+    this.state.matches = this.state.matches.filter((match) => match.id !== matchId);
+    // Turnuva masası bu maça bağlıysa sonuçsuz kalır.
+    for (const t of this.state.tournaments) {
+      for (const round of t.rounds) {
+        for (const board of round) if (board.matchId === matchId) board.matchId = null;
+      }
+    }
+    this.save();
+  }
+
+  getMatch(matchId) {
+    return this.state.matches.find((match) => match.id === matchId) || null;
+  }
+
+  /** Öğrencinin maçları, yeniden eskiye. */
+  matchesOf(studentId) {
+    return this.state.matches
+      .filter((match) => match.whiteId === studentId || match.blackId === studentId)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  /** Öğrencinin maç özeti: { played, wins, draws, losses, points }. */
+  statsOf(studentId) {
+    const stats = { played: 0, wins: 0, draws: 0, losses: 0, points: 0 };
+    for (const match of this.matchesOf(studentId)) {
+      const white = RESULT_POINTS[match.result];
+      const points = match.whiteId === studentId ? white : 1 - white;
+      stats.played += 1;
+      stats.points += points;
+      if (points === 1) stats.wins += 1;
+      else if (points === 0) stats.losses += 1;
+      else stats.draws += 1;
+    }
+    return stats;
+  }
+
+  /** Sınıf sıralaması: puan → galibiyet → ad. */
+  classStandings(classId) {
+    return this.students(classId)
+      .map((student) => ({ student, ...this.statsOf(student.id) }))
+      .sort((a, b) => b.points - a.points || b.wins - a.wins || byName(a.student, b.student));
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Turnuvalar (İsviçre sistemi)
+   * ---------------------------------------------------------------- */
+
+  tournaments(classId) {
+    return this.state.tournaments
+      .filter((t) => t.classId === classId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  getTournament(id) {
+    return this.state.tournaments.find((t) => t.id === id) || null;
+  }
+
+  createTournament({ classId, name, rounds, playerIds }) {
+    if (!this.getClass(classId) || playerIds.length < 2) return null;
+    // Başlangıç sırası (seed) kurada belirlenir: öğrencilerin reytingi yok ve
+    // alfabetik sıra hep aynı çocukları ilk turda karşılaştırırdı.
+    const seeded = [...playerIds].sort(() => Math.random() - 0.5);
+    const t = {
+      id: uid(),
+      classId,
+      name: String(name || "").trim().slice(0, 40) || "Sınıf Turnuvası",
+      createdAt: new Date().toISOString(),
+      plannedRounds: Math.max(1, Math.min(20, Number(rounds) || 1)),
+      playerIds: seeded,
+      withdrawn: [],
+      rounds: [],
+      finished: false
+    };
+    this.state.tournaments.push(t);
+    this.save();
+    return t;
+  }
+
+  deleteTournament(id) {
+    const matchIds = new Set();
+    for (const round of this.getTournament(id)?.rounds || []) {
+      for (const board of round) if (board.matchId) matchIds.add(board.matchId);
+    }
+    this.state.matches = this.state.matches.filter((match) => !matchIds.has(match.id));
+    this.state.tournaments = this.state.tournaments.filter((t) => t.id !== id);
+    this.save();
+  }
+
+  /** Masanın sonucu: "1-0" | "0-1" | "½-½" | "bay" | null. */
+  boardResult(board) {
+    if (board.blackId === null) return "bay";
+    return this.getMatch(board.matchId)?.result || null;
+  }
+
+  /** SwissPairing'in beklediği biçimde turlar. */
+  roundsForPairing(t) {
+    return t.rounds.map((round) =>
+      round.map((board) => ({
+        whiteId: board.whiteId,
+        blackId: board.blackId,
+        result: board.blackId === null ? null : this.boardResult(board)
+      }))
+    );
+  }
+
+  /** Puan tablosu (sıralı). */
+  tournamentStandings(t) {
+    return rankRows(tally(t.playerIds, this.roundsForPairing(t)).values());
+  }
+
+  /** Son turun bütün sonuçları girildi mi? */
+  roundComplete(t, index = t.rounds.length - 1) {
+    const round = t.rounds[index];
+    return Boolean(round) && round.every((board) => this.boardResult(board) !== null);
+  }
+
+  /** Sonraki turu eşleştirir. Son tur tamamlanmadıysa null döner. */
+  pairNextRound(tournamentId) {
+    const t = this.getTournament(tournamentId);
+    if (!t || t.finished) return null;
+    if (t.rounds.length > 0 && !this.roundComplete(t)) return null;
+
+    const active = t.playerIds.filter((id) => !t.withdrawn.includes(id));
+    if (active.length < 2) return null;
+
+    const rows = tally(t.playerIds, this.roundsForPairing(t));
+    const boards = pairRound(active, rows).map((board, index) => ({
+      id: uid(),
+      table: index + 1,
+      whiteId: board.whiteId,
+      blackId: board.blackId,
+      matchId: null
+    }));
+    t.rounds.push(boards);
+    this.save();
+    return boards;
+  }
+
+  /** Son turu geri alır (yanlış eşleştirme ya da eklenecek oyuncu için). */
+  undoLastRound(tournamentId) {
+    const t = this.getTournament(tournamentId);
+    if (!t || t.rounds.length === 0) return;
+    const last = t.rounds.pop();
+    const ids = new Set(last.map((board) => board.matchId).filter(Boolean));
+    this.state.matches = this.state.matches.filter((match) => !ids.has(match.id));
+    t.finished = false;
+    this.save();
+  }
+
+  findBoard(tournamentId, boardId) {
+    const t = this.getTournament(tournamentId);
+    if (!t) return null;
+    for (let index = 0; index < t.rounds.length; index += 1) {
+      const board = t.rounds[index].find((item) => item.id === boardId);
+      if (board) return { tournament: t, board, round: index + 1 };
+    }
+    return null;
+  }
+
+  /**
+   * Masaya sonuç yazar. `result` null ise sonucu siler.
+   * Maç kaydı öğrencinin geçmişine de işlenir.
+   */
+  setBoardResult(tournamentId, boardId, result, extra = {}) {
+    const found = this.findBoard(tournamentId, boardId);
+    if (!found || found.board.blackId === null) return null;
+    const { tournament, board, round } = found;
+
+    if (board.matchId) {
+      this.state.matches = this.state.matches.filter((match) => match.id !== board.matchId);
+      board.matchId = null;
+    }
+    if (!result) {
+      this.save();
+      return null;
+    }
+
+    const match = this.recordMatch({
+      ...extra,
+      classId: tournament.classId,
+      whiteId: board.whiteId,
+      blackId: board.blackId,
+      result,
+      source: "tournament",
+      tournamentId: tournament.id,
+      round
+    });
+    board.matchId = match?.id || null;
+    this.save();
+    return match;
+  }
+
+  /** Oyuncuyu sonraki turlardan çeker / geri alır. */
+  toggleWithdrawn(tournamentId, studentId) {
+    const t = this.getTournament(tournamentId);
+    if (!t) return;
+    t.withdrawn = t.withdrawn.includes(studentId)
+      ? t.withdrawn.filter((id) => id !== studentId)
+      : [...t.withdrawn, studentId];
+    this.save();
+  }
+
+  /** Turnuva sürerken sınıfa katılan öğrenciyi ekler (kaçırdığı turlar 0 puan). */
+  addTournamentPlayer(tournamentId, studentId) {
+    const t = this.getTournament(tournamentId);
+    if (!t || t.playerIds.includes(studentId)) return;
+    t.playerIds.push(studentId);
+    this.save();
+  }
+
+  setTournamentFinished(tournamentId, finished) {
+    const t = this.getTournament(tournamentId);
+    if (!t) return;
+    t.finished = Boolean(finished);
+    this.save();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Yedek
+   * ---------------------------------------------------------------- */
+
+  exportJSON() {
+    return JSON.stringify({ app: "satranc-okulu", exportedAt: new Date().toISOString(), ...this.state }, null, 2);
+  }
+
+  /** Yedek dosyasını yükler; geçersizse false döner ve mevcut veriye dokunmaz. */
+  importJSON(text) {
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return false;
+    }
+    const state = ClassroomService.normalize(parsed);
+    if (!state) return false;
+    this.state = state;
+    this.save();
+    return true;
+  }
+}
+
+/** Uygulama genelinde tek örnek: üst çubuk, sınıf, turnuva ve oyun ekranları paylaşır. */
+const classroom = new ClassroomService();
+
+  Object.defineProperty(__d, "tidyName", { get: () => tidyName, enumerable: true });
+  Object.defineProperty(__d, "ClassroomService", { get: () => ClassroomService, enumerable: true });
+  Object.defineProperty(__d, "classroom", { get: () => classroom, enumerable: true });
+},
+
 "src/pages/DuelPage.js": function (__d) {
 /**
  * DuelPage.js — "İki Kişilik Oyun": iki öğrenci aynı ekranda karşı karşıya.
@@ -48083,6 +49575,8 @@ const { icon } = __yukle("src/components/Icon.js");
 const { pieceHTML } = __yukle("src/components/PieceGlyph.js");
 const { burst } = __yukle("src/animations/effects.js");
 const { pageShell, focusToggle } = __yukle("src/pages/pageUtils.js");
+const { navigate, routeParam } = __yukle("src/utils/router.js");
+const { classroom } = __yukle("src/services/ClassroomService.js");
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 
@@ -48105,11 +49599,11 @@ const COLOR_NAMES = { w: "Beyaz", b: "Siyah" };
  * oyunların sayısını belirgin biçimde azaltır.
  */
 const TIME_CONTROLS = [
-  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
-  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
-  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
-  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+  { id: "yok", label: "Süresiz", detail: "Saat yok", icon: "⚪", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", icon: "⚡", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", icon: "🏃", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", icon: "🏆", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel Süre", detail: "Kendin belirle", icon: "⚙️", base: 180, increment: 2 }
 ];
 
 /** Maç puanını satranç geleneğine göre yazar: 0.5 → "½", 1.5 → "1½". */
@@ -48167,6 +49661,27 @@ function DuelPage({ sound }) {
   let finished = false; // sonuç kartı bir kez gösterilsin
 
   const names = { w: "Beyaz Oyuncu", b: "Siyah Oyuncu" };
+
+  /* --- Sınıf ve turnuva kaydı --- */
+
+  /** Seçili öğrencilerin kimlikleri; misafir oyuncu için null. */
+  const players = { w: null, b: null };
+
+  /**
+   * Turnuva masası: Turnuva ekranındaki "Tahtada Oyna" buraya
+   * #/duello?turnuva=…&masa=… ile gelir. Oyuncular ve renkleri masadan gelir.
+   */
+  const tourCtx = classroom.findBoard(routeParam("turnuva"), routeParam("masa"));
+  if (tourCtx && tourCtx.board.blackId !== null) {
+    players.w = tourCtx.board.whiteId;
+    players.b = tourCtx.board.blackId;
+    names.w = classroom.studentName(players.w);
+    names.b = classroom.studentName(players.b);
+  }
+  const tourBoard = tourCtx && tourCtx.board.blackId !== null ? tourCtx : null;
+
+  let savedMatch = null; // bu oyunun kaydı; oyun geri alınırsa silinir
+  let tourRecorded = false; // turnuva masasına bir kez yazılır
 
   /* --- Saat --- */
 
@@ -48625,6 +50140,7 @@ function DuelPage({ sound }) {
 
     startFen = setupFen(startTurn);
     chess.load(startFen);
+    savedMatch = null;
     phase = "play";
     finished = false;
     lastAward = null;
@@ -48650,6 +50166,7 @@ function DuelPage({ sound }) {
     if (!startFen) return;
     chess.load(startFen);
     finished = false;
+    savedMatch = null;
     // Yeni oyunun puanı ayrı yazılır; biten oyunun puanı maç skorunda KALIR.
     lastAward = null;
     moveList.replaceChildren();
@@ -48756,6 +50273,8 @@ function DuelPage({ sound }) {
       match.b -= lastAward.b;
       lastAward = null;
     }
+    // Biten oyunun kaydı da geri alınır; oyun devam edecek.
+    if (finished) unsaveResult();
     finished = false;
     resultHost.replaceChildren();
     if (moveList.lastChild) moveList.lastChild.remove();
@@ -48798,6 +50317,7 @@ function DuelPage({ sound }) {
     stopTicking();
     awardMatch(winner);
     sound.play("badge");
+    const saved = saveResult(winner, reason);
 
     const winnerLine =
       winner === null ? "Beraberlik — ikiniz de iyi oynadınız." : `Kazanan: ${names[winner]}`;
@@ -48811,7 +50331,16 @@ function DuelPage({ sound }) {
           className: "duel-result-match",
           text: `Maç skoru — ${names.w} ${scoreText(match.w)} : ${scoreText(match.b)} ${names.b}`
         }),
+        saved ? el("p", { className: `duel-result-saved ${saved.tone}`, text: saved.text }) : null,
         el("div", { className: "duel-result-actions" }, [
+          tourBoard
+            ? el("button", {
+                className: "primary",
+                type: "button",
+                text: "Turnuvaya Dön",
+                onClick: () => navigate("turnuva", { id: tourBoard.tournament.id })
+              })
+            : null,
           el("button", {
             className: "primary",
             type: "button",
@@ -48829,6 +50358,61 @@ function DuelPage({ sound }) {
     );
     burst(resultHost);
     refresh();
+  }
+
+  /**
+   * Biten oyunu öğrencilerin kaydına (ya da turnuva masasına) yazar.
+   * @returns {{text:string, tone:string}|null} Sonuç kartında gösterilecek not.
+   */
+  function saveResult(winner, reason) {
+    const result = winner === null ? "½-½" : winner === "w" ? "1-0" : "0-1";
+    const history = chess.getHistory();
+    const meta = {
+      reason,
+      moves: Math.ceil(history.length / 2),
+      timeControl: timeControl.id === "yok" ? "" : timeControl.label
+    };
+
+    if (tourBoard) {
+      if (tourRecorded) {
+        return { text: "Bu masanın sonucu zaten turnuvaya işlendi. Değiştirmek için turnuva ekranını kullan.", tone: "" };
+      }
+      savedMatch = classroom.setBoardResult(tourBoard.tournament.id, tourBoard.board.id, result, meta);
+      tourRecorded = Boolean(savedMatch);
+      return savedMatch
+        ? { text: `✓ Sonuç turnuvaya işlendi: ${tourBoard.tournament.name}, ${tourBoard.round}. tur, Masa ${tourBoard.board.table}.`, tone: "ok" }
+        : null;
+    }
+
+    const active = classroom.activeClass;
+    if (!active || !players.w || !players.b || players.w === players.b) return null;
+    savedMatch = classroom.recordMatch({ ...meta, classId: active.id, whiteId: players.w, blackId: players.b, result, source: "duel" });
+    return savedMatch ? { text: `✓ Sonuç ${names.w} ve ${names.b} için ${active.name} kaydına işlendi.`, tone: "ok" } : null;
+  }
+
+  /** Geri alınan oyunun kaydını siler. */
+  function unsaveResult() {
+    if (!savedMatch) return;
+    if (tourBoard) {
+      classroom.setBoardResult(tourBoard.tournament.id, tourBoard.board.id, null);
+      tourRecorded = false;
+    } else {
+      classroom.deleteMatch(savedMatch.id);
+    }
+    savedMatch = null;
+  }
+
+  /** Pes etme ve anlaşmalı beraberlik — motorun kendi bulamayacağı sonuçlar. */
+  function resign(color) {
+    if (phase !== "play" || finished) return;
+    if (!window.confirm(`${names[color]} pes ediyor. Oyun bitirilsin mi?`)) return;
+    endGame({ winner: color === "w" ? "b" : "w", reason: `${names[color]} pes etti.` });
+  }
+
+  function agreeDraw() {
+    if (phase !== "play" || finished) return;
+    if (!window.confirm("İki oyuncu beraberlikte anlaştı mı?")) return;
+    endGame({ winner: null, reason: "Oyuncular beraberlikte anlaştı." });
   }
 
   /** Hamle listesine yeni satır ekler. */
@@ -49231,10 +50815,19 @@ function DuelPage({ sound }) {
     ])
   ]);
 
+  const customBadge = el("span", {
+    className: "custom-opt-badge",
+    text: `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "")
+  });
+
+  function updateCustomBadge() {
+    customBadge.textContent = `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "");
+  }
+
   function applyCustomTime() {
     timeControl = {
       id: "ozel",
-      label: "Özel",
+      label: "Özel Süre",
       detail: `${customMinutes} dk`,
       base: Math.max(1, customMinutes) * 60,
       increment: Math.max(0, customIncrement)
@@ -49244,6 +50837,7 @@ function DuelPage({ sound }) {
     }
     customTimeBox.hidden = false;
     updateCustomInputs();
+    updateCustomBadge();
     resetClocks();
     timeNote.textContent = timeHint();
   }
@@ -49258,35 +50852,60 @@ function DuelPage({ sound }) {
     applyCustomTime();
   }
 
-  const timeButtonsContainer = el("div", { className: "segmented duel-times" });
+  const timeButtonsContainer = el("div", { className: "duel-time-grid" });
 
-  const timeButtons = TIME_CONTROLS.map((option) =>
-    el("button", {
-      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+  const timeButtons = TIME_CONTROLS.map((option) => {
+    if (option.id === "ozel") {
+      return el("button", {
+        className: `time-btn custom-opt ${option.id === timeControl.id ? "active" : ""}`,
+        type: "button",
+        "data-time": "ozel",
+        title: "Özel süre — istediğin süreyi kendin belirle",
+        onClick: () => {
+          sound.play("click");
+          applyCustomTime();
+        }
+      }, [
+        el("div", { className: "custom-opt-left" }, [
+          el("span", { className: "time-btn-icon", text: option.icon }),
+          el("div", { className: "custom-opt-texts" }, [
+            el("strong", { text: "Özel Süre" }),
+            el("small", { text: "İstediğin süreyi belirle" })
+          ])
+        ]),
+        customBadge
+      ]);
+    }
+
+    return el("button", {
+      className: `time-btn ${option.id === timeControl.id ? "active" : ""}`,
       type: "button",
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
         sound.play("click");
-        if (option.id === "ozel") {
-          applyCustomTime();
-        } else {
-          timeControl = option;
-          customTimeBox.hidden = true;
-          if (option.base > 0) {
-            customMinutes = Math.floor(option.base / 60);
-            customIncrement = option.increment;
-            updateCustomInputs();
-          }
-          for (const button of timeButtonsContainer.children) {
-            button.classList.toggle("active", button.dataset.time === option.id);
-          }
-          resetClocks();
-          timeNote.textContent = timeHint();
+        timeControl = option;
+        customTimeBox.hidden = true;
+        if (option.base > 0) {
+          customMinutes = Math.floor(option.base / 60);
+          customIncrement = option.increment;
+          updateCustomInputs();
+          updateCustomBadge();
         }
+        for (const button of timeButtonsContainer.children) {
+          button.classList.toggle("active", button.dataset.time === option.id);
+        }
+        resetClocks();
+        timeNote.textContent = timeHint();
       }
-    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
-  );
+    }, [
+      el("div", { className: "time-btn-head" }, [
+        el("span", { className: "time-btn-icon", text: option.icon }),
+        el("strong", { text: option.label })
+      ]),
+      el("small", { text: option.detail })
+    ]);
+  });
   timeButtonsContainer.append(...timeButtons);
 
   timeNote.textContent = timeHint();
@@ -49305,6 +50924,77 @@ function DuelPage({ sound }) {
         refresh();
       }
     });
+  }
+
+  const recordNote = el("p", { className: "duel-record-note" });
+
+  /** Sonucun nereye kaydedileceğini söyler. */
+  function updateRecordNote() {
+    const active = classroom.activeClass;
+    let text;
+    let tone = "";
+    if (tourBoard) {
+      const previous = classroom.boardResult(tourBoard.board);
+      text = `🏆 ${tourBoard.tournament.name} · ${tourBoard.round}. tur · Masa ${tourBoard.board.table}. Sonuç turnuvaya işlenecek.` +
+        (previous ? ` (Şu an girili sonuç: ${previous} — oyun bitince yenisi yazılır.)` : "");
+      tone = "ok";
+    } else if (!active) {
+      text = "Sonuçları öğrencilere kaydetmek için üst çubuktan sınıf seç.";
+    } else if (players.w && players.b && players.w === players.b) {
+      text = "Aynı öğrenci iki tarafta seçili — sonuç kaydedilmez.";
+      tone = "warn";
+    } else if (players.w && players.b) {
+      text = `✓ Sonuç ${names.w} ve ${names.b} için kaydedilecek.`;
+      tone = "ok";
+    } else {
+      text = "Sonucun kaydedilmesi için iki öğrenci de seç.";
+    }
+    recordNote.textContent = text;
+    recordNote.className = `duel-record-note ${tone}`;
+  }
+
+  /**
+   * Oyuncu seçimi: sınıf seçiliyse öğrenci listesi, değilse serbest ad.
+   * Turnuva masasında oyuncular sabittir.
+   */
+  function playerPicker(color) {
+    const label = `${color === "w" ? "♔" : "♚"} ${COLOR_NAMES[color]}`;
+    if (tourBoard) {
+      return el("div", { className: "duel-player-fixed" }, [
+        el("span", { text: label }),
+        el("strong", { text: names[color] })
+      ]);
+    }
+
+    const active = classroom.activeClass;
+    const students = active ? classroom.students(active.id) : [];
+    if (students.length === 0) return nameInput(color);
+
+    const guest = nameInput(color);
+    guest.hidden = true;
+    const select = el("select", {
+      className: "duel-name-input duel-player-select",
+      "aria-label": `${COLOR_NAMES[color]} oyuncu`,
+      onChange: (event) => {
+        const value = event.target.value;
+        guest.hidden = value !== "__guest";
+        if (value && value !== "__guest") {
+          players[color] = value;
+          names[color] = classroom.studentName(value);
+        } else {
+          players[color] = null;
+          names[color] = (value === "__guest" && guest.value.trim()) || `${COLOR_NAMES[color]} Oyuncu`;
+        }
+        sound.play("click");
+        updateRecordNote();
+        refresh();
+      }
+    }, [
+      el("option", { value: "", text: `${label} — öğrenci seç` }),
+      ...students.map((student) => el("option", { value: student.id, text: student.name })),
+      el("option", { value: "__guest", text: "Misafir (kaydedilmez)" })
+    ]);
+    return el("div", { className: "duel-player-pick" }, [select, guest]);
   }
 
   const setupPanel = el("div", { className: "duel-panel-body" }, [
@@ -49339,8 +51029,17 @@ function DuelPage({ sound }) {
     timeButtonsContainer,
     customTimeBox,
     timeNote,
-    el("label", { className: "panel-label", text: "Oyuncular" }),
-    el("div", { className: "duel-names" }, [nameInput("w"), nameInput("b")]),
+    el("label", { className: "panel-label", text: tourBoard ? "Turnuva masası" : "Oyuncular" }),
+    el("div", { className: "duel-names" }, [playerPicker("w"), playerPicker("b")]),
+    recordNote,
+    tourBoard
+      ? el("button", {
+          className: "link-button",
+          type: "button",
+          text: "← Turnuvaya dön",
+          onClick: () => navigate("turnuva", { id: tourBoard.tournament.id })
+        })
+      : null,
     el("button", {
       className: "primary duel-start",
       type: "button",
@@ -49413,6 +51112,11 @@ function DuelPage({ sound }) {
     ]),
     statusEl,
     autoFlipBox,
+    el("div", { className: "duel-end-row" }, [
+      el("button", { className: "ghost small", type: "button", text: "🏳 Beyaz pes etti", onClick: () => resign("w") }),
+      el("button", { className: "ghost small", type: "button", text: "🤝 Beraberlik", onClick: () => agreeDraw() }),
+      el("button", { className: "ghost small", type: "button", text: "🏳 Siyah pes etti", onClick: () => resign("b") })
+    ]),
     moveList,
     resultHost
   ]);
@@ -49441,6 +51145,12 @@ function DuelPage({ sound }) {
 
   buildBoards();
   openSetup(null);
+  updateRecordNote();
+  // Turnuva maçı standart dizilişle başlar; çocuklar yine de düzenleyebilir.
+  if (tourBoard) {
+    setup = standardSetup();
+    applySetup();
+  }
 
   return page;
 }
@@ -50205,6 +51915,985 @@ function SettingsPage({ progress, sound, rerender }) {
   Object.defineProperty(__d, "SettingsPage", { get: () => SettingsPage, enumerable: true });
 },
 
+"src/pages/ClassesPage.js": function (__d) {
+/**
+ * ClassesPage.js — "Sınıflarım": sınıf ve öğrenci yönetimi.
+ *
+ * Öğretmen sınıf ekler, öğrenci listesini girer (e-Okul listesinden toplu
+ * yapıştırma dahil) ve seçtiği sınıfın sıralamasını, her öğrencinin maç
+ * geçmişini görür. Burada seçilen sınıf uygulama genelinde "aktif sınıf"
+ * olur: İki Kişilik Oyun ve Turnuva ekranları öğrencileri oradan alır.
+ *
+ * Veriler bu bilgisayarda kalır; başka bilgisayara taşımak için Yedekle /
+ * Geri Yükle kullanılır.
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { navigate } = __yukle("src/utils/router.js");
+const { icon } = __yukle("src/components/Icon.js");
+const { classroom } = __yukle("src/services/ClassroomService.js");
+const { pageShell } = __yukle("src/pages/pageUtils.js");
+/** ½ puanı okunur yazar: 2.5 → "2½". */
+function pointsText(value) {
+  const whole = Math.floor(value);
+  if (value - whole < 0.5) return String(whole);
+  return whole === 0 ? "½" : `${whole}½`;
+}
+
+/** ISO tarihini "17.09.2026" biçiminde yazar. */
+function dateText(iso) {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("tr-TR");
+}
+
+function ClassesPage({ sound }) {
+  let selectedStudentId = null;
+  let bulkOpen = false;
+  let notice = { text: "", tone: "" };
+
+  const sidebar = el("aside", { className: "class-sidebar" });
+  const main = el("div", { className: "class-main" });
+
+  function say(text, tone = "info") {
+    notice = { text, tone };
+  }
+
+  function draw() {
+    drawSidebar();
+    drawMain();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Sol sütun: sınıf listesi, sınıf ekleme, yedek
+   * ---------------------------------------------------------------- */
+
+  function drawSidebar() {
+    const active = classroom.state.activeClassId;
+    const nameInput = el("input", {
+      className: "class-input",
+      type: "text",
+      maxlength: "30",
+      placeholder: "Örn. 3-A",
+      "aria-label": "Yeni sınıf adı"
+    });
+
+    const addClass = () => {
+      const created = classroom.addClass(nameInput.value);
+      if (!created) {
+        nameInput.focus();
+        return;
+      }
+      sound.play("success");
+      selectedStudentId = null;
+      bulkOpen = true;
+      say(`${created.name} eklendi. Şimdi öğrencileri ekle.`, "correct");
+      draw();
+    };
+    nameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addClass();
+    });
+
+    const fileInput = el("input", {
+      type: "file",
+      accept: "application/json,.json",
+      hidden: "",
+      onChange: async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+        const text = await file.text();
+        if (!window.confirm("Yedek yüklenirse bu bilgisayardaki TÜM sınıf, öğrenci ve turnuva kayıtları yedektekilerle değiştirilir. Devam edilsin mi?")) return;
+        if (classroom.importJSON(text)) {
+          sound.play("success");
+          selectedStudentId = null;
+          say("Yedek yüklendi.", "correct");
+        } else {
+          sound.play("error");
+          say("Bu dosya geçerli bir sınıf yedeği değil.", "wrong");
+        }
+        draw();
+      }
+    });
+
+    sidebar.replaceChildren(
+      el("section", { className: "class-card" }, [
+        el("h2", { className: "class-card-title", text: "Sınıflar" }),
+        classroom.classes.length === 0
+          ? el("p", { className: "class-empty", text: "Henüz sınıf yok. Aşağıdan ilk sınıfını ekle." })
+          : el("div", { className: "class-list" }, classroom.classes.map((item) =>
+              el("button", {
+                className: `class-item ${item.id === active ? "active" : ""}`,
+                type: "button",
+                onClick: () => {
+                  sound.play("click");
+                  classroom.setActiveClass(item.id);
+                  selectedStudentId = null;
+                  notice = { text: "", tone: "" };
+                  draw();
+                }
+              }, [
+                el("strong", { text: item.name }),
+                el("small", { text: `${classroom.students(item.id).length} öğrenci` })
+              ])
+            )),
+        el("div", { className: "class-add" }, [
+          nameInput,
+          el("button", { className: "primary small", type: "button", text: "Sınıf Ekle", onClick: addClass })
+        ])
+      ]),
+      el("section", { className: "class-card" }, [
+        el("h2", { className: "class-card-title", text: "Yedek" }),
+        el("p", {
+          className: "class-hint",
+          text: "Kayıtlar yalnızca bu bilgisayarda durur. Başka bilgisayara taşımak ya da güvenceye almak için yedek dosyası al."
+        }),
+        el("div", { className: "class-row-buttons" }, [
+          el("button", {
+            className: "ghost small",
+            type: "button",
+            text: "Yedekle",
+            onClick: () => {
+              sound.play("click");
+              const blob = new Blob([classroom.exportJSON()], { type: "application/json" });
+              const link = el("a", {
+                href: URL.createObjectURL(blob),
+                download: `satranc-siniflar-${new Date().toISOString().slice(0, 10)}.json`
+              });
+              document.body.append(link);
+              link.click();
+              link.remove();
+              setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            }
+          }),
+          el("button", {
+            className: "ghost small",
+            type: "button",
+            text: "Geri Yükle",
+            onClick: () => fileInput.click()
+          }),
+          fileInput
+        ])
+      ])
+    );
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Sağ sütun: seçili sınıf
+   * ---------------------------------------------------------------- */
+
+  function drawMain() {
+    const item = classroom.activeClass;
+    if (!item) {
+      main.replaceChildren(
+        el("section", { className: "class-card class-welcome" }, [
+          el("span", { className: "class-welcome-emoji", text: "🏫" }),
+          el("h2", { text: classroom.classes.length ? "Bir sınıf seç" : "İlk sınıfını ekle" }),
+          el("p", {
+            text: "Sınıf seçtiğinde öğrencilerin, maç sonuçları ve sıralama burada görünür. İki Kişilik Oyun ve Turnuva ekranları da bu sınıfın listesini kullanır."
+          })
+        ])
+      );
+      return;
+    }
+
+    const students = classroom.students(item.id);
+
+    // Koşullu bölümler null olabilir; replaceChildren null'u "null" yazısı yapar.
+    const sections = [
+      el("section", { className: "class-card class-head" }, [
+        el("div", { className: "class-head-title" }, [
+          el("h2", { text: item.name }),
+          el("span", { className: "class-count", text: `${students.length} öğrenci` })
+        ]),
+        el("div", { className: "class-row-buttons" }, [
+          el("button", {
+            className: "primary small",
+            type: "button",
+            html: `${icon("crown")} Turnuva`,
+            onClick: () => navigate("turnuva")
+          }),
+          el("button", {
+            className: "ghost small",
+            type: "button",
+            html: `${icon("duo")} İki Kişilik Oyun`,
+            onClick: () => navigate("duello")
+          }),
+          el("button", {
+            className: "ghost small",
+            type: "button",
+            html: `${icon("edit")} Adını Değiştir`,
+            onClick: () => {
+              const name = window.prompt("Sınıfın yeni adı:", item.name);
+              if (name === null) return;
+              classroom.renameClass(item.id, name);
+              draw();
+            }
+          }),
+          el("button", {
+            className: "ghost small danger-text",
+            type: "button",
+            text: "Sınıfı Sil",
+            onClick: () => {
+              if (!window.confirm(`${item.name} sınıfı; öğrencileri, maç sonuçları ve turnuvalarıyla birlikte silinecek. Emin misin?`)) return;
+              classroom.deleteClass(item.id);
+              sound.play("click");
+              selectedStudentId = null;
+              say(`${item.name} silindi.`, "info");
+              draw();
+            }
+          })
+        ])
+      ]),
+      notice.text ? el("p", { className: `lesson-status ${notice.tone}`, text: notice.text }) : null,
+      studentAdder(item),
+      students.length ? standingsCard(item) : null,
+      selectedStudentId ? studentDetail(selectedStudentId) : null,
+      students.length >= 2 ? manualMatchCard(item) : null
+    ];
+    main.replaceChildren(...sections.filter(Boolean));
+  }
+
+  /** Öğrenci ekleme: tek tek ya da liste yapıştırarak. */
+  function studentAdder(item) {
+    const single = el("input", {
+      className: "class-input",
+      type: "text",
+      maxlength: "40",
+      placeholder: "Ad Soyad",
+      "aria-label": "Öğrencinin adı soyadı"
+    });
+    const bulk = el("textarea", {
+      className: "class-textarea",
+      rows: "8",
+      placeholder: "Her satıra bir öğrenci:\nAyşe Yılmaz\nMehmet Demir\n...",
+      "aria-label": "Öğrenci listesi"
+    });
+
+    const add = (text) => {
+      const { added, skipped } = classroom.addStudents(item.id, text);
+      if (!added && !skipped) return;
+      sound.play(added ? "success" : "error");
+      say(
+        `${added} öğrenci eklendi.` + (skipped ? ` ${skipped} ad zaten listede olduğu için atlandı.` : ""),
+        added ? "correct" : "wrong"
+      );
+      if (added) bulkOpen = false;
+      draw();
+    };
+    single.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") add(single.value);
+    });
+
+    return el("section", { className: "class-card" }, [
+      el("h3", { className: "class-card-title", text: "Öğrenci Ekle" }),
+      el("div", { className: "class-add" }, [
+        single,
+        el("button", { className: "primary small", type: "button", text: "Ekle", onClick: () => add(single.value) }),
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: bulkOpen ? "Listeyi Kapat" : "Liste Yapıştır",
+          onClick: () => {
+            bulkOpen = !bulkOpen;
+            drawMain();
+          }
+        })
+      ]),
+      bulkOpen
+        ? el("div", { className: "class-bulk" }, [
+            el("p", {
+              className: "class-hint",
+              text: "e-Okul ya da Excel listesinden ad soyad sütununu kopyalayıp yapıştırabilirsin. Satır başındaki numaralar atılır, BÜYÜK HARF adlar düzeltilir."
+            }),
+            bulk,
+            el("button", { className: "primary small", type: "button", text: "Hepsini Ekle", onClick: () => add(bulk.value) })
+          ])
+        : null
+    ]);
+  }
+
+  /** Sınıf sıralaması: tüm maçlardan (iki kişilik + turnuva) hesaplanır. */
+  function standingsCard(item) {
+    const rows = classroom.classStandings(item.id);
+    return el("section", { className: "class-card" }, [
+      el("h3", { className: "class-card-title", text: "Öğrenciler ve Sıralama" }),
+      el("p", { className: "class-hint", text: "Galibiyet 1, beraberlik ½ puan. Öğrenciye dokununca maç geçmişi açılır." }),
+      el("div", { className: "class-table-wrap" }, [
+        el("table", { className: "class-table" }, [
+          el("thead", {}, [
+            el("tr", {}, ["#", "Ad Soyad", "Maç", "G", "B", "M", "Puan", ""].map((label) => el("th", { text: label })))
+          ]),
+          el("tbody", {}, rows.map((row, index) =>
+            el("tr", {
+              className: row.student.id === selectedStudentId ? "selected" : "",
+              onClick: () => {
+                sound.play("click");
+                selectedStudentId = selectedStudentId === row.student.id ? null : row.student.id;
+                drawMain();
+              }
+            }, [
+              el("td", { className: "num", text: row.played ? String(index + 1) : "–" }),
+              el("td", { className: "name", text: row.student.name }),
+              el("td", { className: "num", text: String(row.played) }),
+              el("td", { className: "num", text: String(row.wins) }),
+              el("td", { className: "num", text: String(row.draws) }),
+              el("td", { className: "num", text: String(row.losses) }),
+              el("td", { className: "num strong", text: pointsText(row.points) }),
+              el("td", { className: "actions" }, [
+                el("button", {
+                  className: "class-icon-btn",
+                  type: "button",
+                  title: "Adını düzelt",
+                  "aria-label": `${row.student.name} adını düzelt`,
+                  html: icon("edit"),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    const name = window.prompt("Öğrencinin adı soyadı:", row.student.name);
+                    if (name === null) return;
+                    classroom.renameStudent(row.student.id, name);
+                    draw();
+                  }
+                }),
+                el("button", {
+                  className: "class-icon-btn danger-text",
+                  type: "button",
+                  title: "Sınıftan çıkar",
+                  "aria-label": `${row.student.name} sınıftan çıkar`,
+                  text: "✕",
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    if (!window.confirm(`${row.student.name} sınıf listesinden çıkarılsın mı? Geçmiş maçları ve turnuva sonuçları korunur.`)) return;
+                    classroom.removeStudent(row.student.id);
+                    if (selectedStudentId === row.student.id) selectedStudentId = null;
+                    say(`${row.student.name} listeden çıkarıldı.`, "info");
+                    draw();
+                  }
+                })
+              ])
+            ])
+          ))
+        ])
+      ])
+    ]);
+  }
+
+  /** Öğrencinin kartı: özet ve maç geçmişi. */
+  function studentDetail(studentId) {
+    const student = classroom.findStudent(studentId);
+    if (!student || student.removed) return null;
+    const stats = classroom.statsOf(studentId);
+    const matches = classroom.matchesOf(studentId);
+
+    const statBox = (label, value) =>
+      el("div", { className: "class-stat" }, [el("strong", { text: value }), el("span", { text: label })]);
+
+    return el("section", { className: "class-card class-student" }, [
+      el("div", { className: "class-student-head" }, [
+        el("h3", { className: "class-card-title", text: student.name }),
+        el("button", {
+          className: "class-icon-btn",
+          type: "button",
+          text: "✕",
+          title: "Kapat",
+          "aria-label": "Öğrenci kartını kapat",
+          onClick: () => {
+            selectedStudentId = null;
+            drawMain();
+          }
+        })
+      ]),
+      el("div", { className: "class-stats" }, [
+        statBox("Maç", String(stats.played)),
+        statBox("Galibiyet", String(stats.wins)),
+        statBox("Beraberlik", String(stats.draws)),
+        statBox("Mağlubiyet", String(stats.losses)),
+        statBox("Puan", pointsText(stats.points))
+      ]),
+      matches.length === 0
+        ? el("p", { className: "class-empty", text: "Henüz kayıtlı maçı yok." })
+        : el("ul", { className: "class-matches" }, matches.map((match) => {
+            const isWhite = match.whiteId === studentId;
+            const rivalId = isWhite ? match.blackId : match.whiteId;
+            const white = { "1-0": 1, "0-1": 0, "½-½": 0.5 }[match.result];
+            const mine = isWhite ? white : 1 - white;
+            const outcome = mine === 1 ? ["Kazandı", "win"] : mine === 0 ? ["Kaybetti", "loss"] : ["Berabere", "draw"];
+            const tournament = match.tournamentId ? classroom.getTournament(match.tournamentId) : null;
+            const source = tournament
+              ? `${tournament.name} · ${match.round}. tur`
+              : match.source === "manual" ? "Elle girildi" : "İki Kişilik Oyun";
+
+            return el("li", { className: "class-match" }, [
+              el("span", { className: `class-outcome ${outcome[1]}`, text: outcome[0] }),
+              el("div", { className: "class-match-body" }, [
+                el("strong", { text: `${isWhite ? "♔ Beyaz" : "♚ Siyah"} · Rakip: ${classroom.studentName(rivalId)}` }),
+                el("small", { text: [dateText(match.date), source, match.reason].filter(Boolean).join(" · ") })
+              ]),
+              el("button", {
+                className: "class-icon-btn danger-text",
+                type: "button",
+                text: "✕",
+                title: "Bu maç kaydını sil",
+                "aria-label": "Bu maç kaydını sil",
+                onClick: () => {
+                  const note = tournament ? " Turnuvadaki masa da sonuçsuz kalacak." : "";
+                  if (!window.confirm(`Bu maç kaydı silinsin mi?${note}`)) return;
+                  classroom.deleteMatch(match.id);
+                  draw();
+                }
+              })
+            ]);
+          }))
+    ]);
+  }
+
+  /** Fiziksel tahtada oynanmış bir maçın sonucunu elle girme. */
+  function manualMatchCard(item) {
+    const students = classroom.students(item.id);
+    const picker = (label) =>
+      el("select", { className: "class-select", "aria-label": label }, [
+        el("option", { value: "", text: label }),
+        ...students.map((student) => el("option", { value: student.id, text: student.name }))
+      ]);
+    const white = picker("Beyaz oyuncu");
+    const black = picker("Siyah oyuncu");
+
+    const submit = (result) => {
+      if (!white.value || !black.value || white.value === black.value) {
+        sound.play("error");
+        say("İki farklı öğrenci seç.", "wrong");
+        drawMain();
+        return;
+      }
+      classroom.recordMatch({
+        classId: item.id,
+        whiteId: white.value,
+        blackId: black.value,
+        result,
+        source: "manual"
+      });
+      sound.play("success");
+      say(`Kaydedildi: ${classroom.studentName(white.value)} ${result} ${classroom.studentName(black.value)}`, "correct");
+      draw();
+    };
+
+    return el("section", { className: "class-card" }, [
+      el("h3", { className: "class-card-title", text: "Maç Sonucu Gir" }),
+      el("p", { className: "class-hint", text: "Gerçek tahtada oynanan bir maçı buradan kaydedebilirsin." }),
+      el("div", { className: "class-manual" }, [
+        white,
+        el("span", { className: "class-vs", text: "–" }),
+        black
+      ]),
+      el("div", { className: "class-row-buttons" }, [
+        el("button", { className: "ghost small", type: "button", text: "1-0 Beyaz kazandı", onClick: () => submit("1-0") }),
+        el("button", { className: "ghost small", type: "button", text: "½-½ Berabere", onClick: () => submit("½-½") }),
+        el("button", { className: "ghost small", type: "button", text: "0-1 Siyah kazandı", onClick: () => submit("0-1") })
+      ])
+    ]);
+  }
+
+  draw();
+
+  return pageShell(
+    "Sınıflarım",
+    "Sınıflarını ve öğrencilerini yönet; maç sonuçları ve sıralama burada toplanır.",
+    [el("section", { className: "class-layout" }, [sidebar, main])],
+    { compact: true }
+  );
+}
+
+  Object.defineProperty(__d, "pointsText", { get: () => pointsText, enumerable: true });
+  Object.defineProperty(__d, "dateText", { get: () => dateText, enumerable: true });
+  Object.defineProperty(__d, "ClassesPage", { get: () => ClassesPage, enumerable: true });
+},
+
+"src/pages/TournamentPage.js": function (__d) {
+/**
+ * TournamentPage.js — Aktif sınıfın İsviçre sistemi turnuvaları.
+ *
+ * Akış:
+ *   1. Öğretmen turnuvaya ad verir, katılacak öğrencileri işaretler ve tur
+ *      sayısını seçer (önerilen sayı otomatik gelir).
+ *   2. "Turu Eşleştir" ile masalar oluşur. Her masanın sonucu ya elle
+ *      (1-0, ½-½, 0-1) girilir ya da "Tahtada Oyna" ile İki Kişilik Oyun
+ *      ekranında oynanır; oyun bitince sonuç masaya kendiliğinden işlenir.
+ *   3. Turun bütün sonuçları girilince sonraki tur eşleştirilir.
+ *   4. Puan tablosu puan → Buchholz → galibiyet sırasıyla dizilir.
+ *
+ * Bütün maçlar öğrencinin kişisel geçmişine de yazılır (bkz. Sınıflarım).
+ */
+
+const { el } = __yukle("src/utils/dom.js");
+const { navigate, routeParam } = __yukle("src/utils/router.js");
+const { icon } = __yukle("src/components/Icon.js");
+const { classroom } = __yukle("src/services/ClassroomService.js");
+const { suggestedRounds } = __yukle("src/services/SwissPairing.js");
+const { pageShell } = __yukle("src/pages/pageUtils.js");
+const { pointsText, dateText } = __yukle("src/pages/ClassesPage.js");
+const RESULTS = [
+  ["1-0", "1-0", "Beyaz kazandı"],
+  ["½-½", "½-½", "Berabere"],
+  ["0-1", "0-1", "Siyah kazandı"]
+];
+
+function TournamentPage({ sound }) {
+  let openId = routeParam("id", null);
+  // Gösterilen sekme: tur sırası (0'dan) ya da "table".
+  let tab = null;
+
+  const host = el("div", { className: "tour-host" });
+
+  function draw() {
+    const item = classroom.activeClass;
+    if (!item) {
+      host.replaceChildren(noClass());
+      return;
+    }
+    const t = openId ? classroom.getTournament(openId) : null;
+    // Koşullu bölümler null olabilir; replaceChildren null'u "null" yazısı yapar.
+    if (t && t.classId === item.id) host.replaceChildren(...detail(t).filter(Boolean));
+    else {
+      openId = null;
+      host.replaceChildren(...overview(item).filter(Boolean));
+    }
+  }
+
+  function noClass() {
+    return el("section", { className: "class-card class-welcome" }, [
+      el("span", { className: "class-welcome-emoji", text: "🏆" }),
+      el("h2", { text: "Önce bir sınıf seç" }),
+      el("p", { text: "Turnuva, seçili sınıfın öğrencileriyle yapılır. Üst çubuktan sınıf seçebilir ya da Sınıflarım ekranından yeni sınıf ekleyebilirsin." }),
+      el("button", { className: "primary", type: "button", text: "Sınıflarım", onClick: () => navigate("siniflar") })
+    ]);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Genel görünüm: yeni turnuva + turnuva listesi
+   * ---------------------------------------------------------------- */
+
+  function overview(item) {
+    const students = classroom.students(item.id);
+    const chosen = new Set(students.map((student) => student.id));
+
+    const nameInput = el("input", {
+      className: "class-input",
+      type: "text",
+      maxlength: "40",
+      value: `${item.name} Turnuvası`,
+      "aria-label": "Turnuva adı"
+    });
+    const roundsInput = el("input", {
+      className: "class-input tour-rounds-input",
+      type: "number",
+      min: "1",
+      max: "20",
+      value: String(suggestedRounds(chosen.size)),
+      "aria-label": "Tur sayısı"
+    });
+    const countNote = el("span", { className: "class-hint" });
+    const updateCount = () => {
+      countNote.textContent = `${chosen.size} oyuncu · önerilen ${suggestedRounds(chosen.size)} tur` +
+        (chosen.size % 2 === 1 ? " · her turda bir kişi bay geçer" : "");
+    };
+
+    const checks = students.map((student) =>
+      el("label", { className: "tour-check" }, [
+        el("input", {
+          type: "checkbox",
+          checked: "",
+          onChange: (event) => {
+            if (event.target.checked) chosen.add(student.id);
+            else chosen.delete(student.id);
+            roundsInput.value = String(suggestedRounds(chosen.size));
+            updateCount();
+          }
+        }),
+        el("span", { text: student.name })
+      ])
+    );
+    const setAll = (on) => {
+      for (const label of checks) label.querySelector("input").checked = on;
+      chosen.clear();
+      if (on) for (const student of students) chosen.add(student.id);
+      roundsInput.value = String(suggestedRounds(chosen.size));
+      updateCount();
+    };
+    updateCount();
+
+    const list = classroom.tournaments(item.id);
+
+    return [
+      el("section", { className: "class-card" }, [
+        el("h2", { className: "class-card-title", text: `Yeni Turnuva — ${item.name}` }),
+        students.length < 2
+          ? el("div", {}, [
+              el("p", { className: "class-empty", text: "Turnuva için sınıfta en az 2 öğrenci olmalı." }),
+              el("button", { className: "ghost small", type: "button", text: "Öğrenci Ekle", onClick: () => navigate("siniflar") })
+            ])
+          : el("div", { className: "tour-form" }, [
+              el("label", { className: "tour-field" }, [el("span", { text: "Turnuva adı" }), nameInput]),
+              el("label", { className: "tour-field short" }, [el("span", { text: "Tur sayısı" }), roundsInput]),
+              el("div", { className: "tour-field wide" }, [
+                el("div", { className: "tour-check-head" }, [
+                  el("span", { text: "Katılanlar" }),
+                  countNote,
+                  el("button", { className: "link-button", type: "button", text: "Hepsi", onClick: () => setAll(true) }),
+                  el("button", { className: "link-button", type: "button", text: "Hiçbiri", onClick: () => setAll(false) })
+                ]),
+                el("div", { className: "tour-checks" }, checks)
+              ]),
+              el("button", {
+                className: "primary",
+                type: "button",
+                html: `${icon("crown")} Turnuvayı Oluştur ve 1. Turu Eşleştir`,
+                onClick: () => {
+                  if (chosen.size < 2) {
+                    sound.play("error");
+                    countNote.textContent = "En az 2 oyuncu seç.";
+                    return;
+                  }
+                  const t = classroom.createTournament({
+                    classId: item.id,
+                    name: nameInput.value,
+                    rounds: roundsInput.value,
+                    playerIds: students.filter((student) => chosen.has(student.id)).map((student) => student.id)
+                  });
+                  classroom.pairNextRound(t.id);
+                  sound.play("success");
+                  openId = t.id;
+                  tab = 0;
+                  draw();
+                }
+              })
+            ])
+      ]),
+      list.length
+        ? el("section", { className: "class-card" }, [
+            el("h2", { className: "class-card-title", text: "Turnuvalar" }),
+            el("div", { className: "tour-list" }, list.map((t) => {
+              const leader = classroom.tournamentStandings(t)[0];
+              return el("button", {
+                className: "tour-list-item",
+                type: "button",
+                onClick: () => {
+                  sound.play("click");
+                  openId = t.id;
+                  tab = null;
+                  draw();
+                }
+              }, [
+                el("span", { className: "tour-list-emoji", text: t.finished ? "🏆" : "♟️" }),
+                el("div", { className: "tour-list-body" }, [
+                  el("strong", { text: t.name }),
+                  el("small", {
+                    text: [
+                      dateText(t.createdAt),
+                      `${t.playerIds.length} oyuncu`,
+                      `Tur ${t.rounds.length}/${t.plannedRounds}`,
+                      t.finished && leader ? `Birinci: ${classroom.studentName(leader.id)}` : t.finished ? "Bitti" : "Devam ediyor"
+                    ].join(" · ")
+                  })
+                ])
+              ]);
+            }))
+          ])
+        : null
+    ];
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Turnuva ayrıntısı
+   * ---------------------------------------------------------------- */
+
+  function detail(t) {
+    const roundCount = t.rounds.length;
+    const lastComplete = roundCount === 0 || classroom.roundComplete(t);
+    if (tab === null) tab = lastComplete && (t.finished || roundCount >= t.plannedRounds) ? "table" : Math.max(0, roundCount - 1);
+    if (typeof tab === "number" && tab >= roundCount) tab = roundCount ? roundCount - 1 : "table";
+
+    const canPair = !t.finished && lastComplete;
+    const allDone = lastComplete && roundCount >= t.plannedRounds;
+
+    const status = t.finished
+      ? "Turnuva bitti."
+      : roundCount === 0
+        ? "Henüz tur eşleştirilmedi."
+        : !lastComplete
+          ? `${roundCount}. tur oynanıyor — sonuçları gir.`
+          : allDone
+            ? "Planlanan bütün turlar bitti. Turnuvayı bitirebilir ya da bir tur daha ekleyebilirsin."
+            : `${roundCount}. tur tamamlandı. Sonraki turu eşleştirebilirsin.`;
+
+    return [
+      el("section", { className: "class-card tour-head" }, [
+        el("button", {
+          className: "ghost small",
+          type: "button",
+          text: "← Turnuvalar",
+          onClick: () => {
+            openId = null;
+            tab = null;
+            draw();
+          }
+        }),
+        el("div", { className: "tour-head-title" }, [
+          el("h2", { text: t.name }),
+          el("small", { text: `${dateText(t.createdAt)} · ${t.playerIds.length} oyuncu · Tur ${roundCount}/${t.plannedRounds} · İsviçre sistemi` })
+        ]),
+        el("div", { className: "class-row-buttons" }, [
+          canPair
+            ? el("button", {
+                className: "primary small",
+                type: "button",
+                text: allDone ? "Bir Tur Daha Ekle" : `${roundCount + 1}. Turu Eşleştir`,
+                onClick: () => {
+                  if (allDone) {
+                    if (!window.confirm("Planlanan tur sayısı doldu. Bir tur daha eklensin mi?")) return;
+                    t.plannedRounds += 1;
+                  }
+                  if (!classroom.pairNextRound(t.id)) {
+                    sound.play("error");
+                    return;
+                  }
+                  sound.play("success");
+                  tab = t.rounds.length - 1;
+                  draw();
+                }
+              })
+            : null,
+          allDone && !t.finished
+            ? el("button", {
+                className: "primary small",
+                type: "button",
+                text: "Turnuvayı Bitir",
+                onClick: () => {
+                  classroom.setTournamentFinished(t.id, true);
+                  sound.play("badge");
+                  tab = "table";
+                  draw();
+                }
+              })
+            : null,
+          t.finished
+            ? el("button", {
+                className: "ghost small",
+                type: "button",
+                text: "Yeniden Aç",
+                onClick: () => {
+                  classroom.setTournamentFinished(t.id, false);
+                  draw();
+                }
+              })
+            : null,
+          roundCount && !t.finished
+            ? el("button", {
+                className: "ghost small",
+                type: "button",
+                text: "Son Turu Geri Al",
+                onClick: () => {
+                  const hasResults = t.rounds[roundCount - 1].some((board) => board.matchId);
+                  const message = hasResults
+                    ? `${roundCount}. turun eşleşmeleri ve girilen sonuçları silinecek. Emin misin?`
+                    : `${roundCount}. turun eşleşmeleri silinsin mi?`;
+                  if (!window.confirm(message)) return;
+                  classroom.undoLastRound(t.id);
+                  tab = null;
+                  draw();
+                }
+              })
+            : null,
+          el("button", {
+            className: "ghost small danger-text",
+            type: "button",
+            text: "Sil",
+            onClick: () => {
+              if (!window.confirm(`"${t.name}" ve bu turnuvada oynanan bütün maç kayıtları silinecek. Emin misin?`)) return;
+              classroom.deleteTournament(t.id);
+              openId = null;
+              tab = null;
+              draw();
+            }
+          })
+        ])
+      ]),
+      el("p", { className: `lesson-status ${t.finished ? "correct" : "info"}`, text: status }),
+      el("div", { className: "stage-row tour-tabs" }, [
+        ...t.rounds.map((_, index) =>
+          el("button", {
+            className: `stage-chip ${tab === index ? "active" : ""}`,
+            type: "button",
+            text: `${index + 1}. Tur${classroom.roundComplete(t, index) ? " ✓" : ""}`,
+            onClick: () => {
+              tab = index;
+              draw();
+            }
+          })
+        ),
+        el("button", {
+          className: `stage-chip ${tab === "table" ? "active" : ""}`,
+          type: "button",
+          text: "Puan Tablosu",
+          onClick: () => {
+            tab = "table";
+            draw();
+          }
+        })
+      ]),
+      tab === "table" ? standings(t) : roundView(t, tab)
+    ];
+  }
+
+  /** Bir turun masaları ve sonuç girişi. */
+  function roundView(t, index) {
+    const round = t.rounds[index];
+    if (!round) return el("p", { className: "class-empty", text: "Bu turda masa yok." });
+
+    // Masadaki oyuncunun o turdan ÖNCEKİ puanı — eşleşmenin adil olduğu görülsün.
+    const before = new Map();
+    const earlier = { ...t, rounds: t.rounds.slice(0, index) };
+    for (const row of classroom.tournamentStandings(earlier)) before.set(row.id, row.points);
+    const who = (id) =>
+      el("span", { className: "tour-player" }, [
+        el("strong", { text: classroom.studentName(id) }),
+        el("small", { text: `${pointsText(before.get(id) || 0)} puan` })
+      ]);
+
+    return el("section", { className: "class-card" }, [
+      el("div", { className: "tour-boards" }, round.map((board) => {
+        if (board.blackId === null) {
+          return el("div", { className: "tour-board bye" }, [
+            el("span", { className: "tour-table-no", text: "BAY" }),
+            who(board.whiteId),
+            el("span", { className: "tour-bye-note", text: "Bu tur rakibi yok — 1 puan alır." })
+          ]);
+        }
+
+        const result = classroom.boardResult(board);
+        return el("div", { className: `tour-board ${result ? "done" : ""}` }, [
+          el("span", { className: "tour-table-no", text: `Masa ${board.table}` }),
+          el("div", { className: "tour-side white" }, [el("span", { className: "tour-color", text: "♔" }), who(board.whiteId)]),
+          el("div", { className: "tour-results", role: "group", "aria-label": "Sonuç" }, RESULTS.map(([code, label, title]) =>
+            el("button", {
+              className: `tour-result ${result === code ? "active" : ""}`,
+              type: "button",
+              text: label,
+              title,
+              "aria-pressed": result === code ? "true" : "false",
+              disabled: t.finished ? "" : null,
+              onClick: () => {
+                sound.play("click");
+                classroom.setBoardResult(t.id, board.id, result === code ? null : code);
+                draw();
+              }
+            })
+          )),
+          el("div", { className: "tour-side black" }, [who(board.blackId), el("span", { className: "tour-color", text: "♚" })]),
+          t.finished
+            ? null
+            : el("button", {
+                className: "ghost small tour-play",
+                type: "button",
+                html: `${icon("duo")} Tahtada Oyna`,
+                title: "İki Kişilik Oyun ekranında oyna; sonuç buraya kendiliğinden yazılır.",
+                onClick: () => navigate("duello", { turnuva: t.id, masa: board.id })
+              })
+        ]);
+      }))
+    ]);
+  }
+
+  /** Puan tablosu + oyuncu çekme/ekleme. */
+  function standings(t) {
+    const rows = classroom.tournamentStandings(t);
+    const podium = t.finished ? rows.slice(0, 3) : [];
+    const outsiders = classroom.students(t.classId).filter((student) => !t.playerIds.includes(student.id));
+
+    return el("section", { className: "class-card" }, [
+      podium.length
+        ? el("div", { className: "tour-podium" }, podium.map((row, index) =>
+            el("div", { className: `tour-podium-step place-${index + 1}` }, [
+              el("span", { className: "tour-medal", text: ["🥇", "🥈", "🥉"][index] }),
+              el("strong", { text: classroom.studentName(row.id) }),
+              el("small", { text: `${pointsText(row.points)} puan` })
+            ])
+          ))
+        : null,
+      el("div", { className: "class-table-wrap" }, [
+        el("table", { className: "class-table" }, [
+          el("thead", {}, [
+            el("tr", {}, [
+              el("th", { text: "#" }),
+              el("th", { text: "Ad Soyad" }),
+              el("th", { text: "Puan", title: "Galibiyet 1, beraberlik ½, bay 1" }),
+              el("th", { text: "Bh.", title: "Buchholz: rakiplerin puan toplamı (eşitlikte belirleyici)" }),
+              el("th", { text: "G" }),
+              el("th", { text: "B" }),
+              el("th", { text: "M" }),
+              el("th", { text: "" })
+            ])
+          ]),
+          el("tbody", {}, rows.map((row, index) => {
+            const out = t.withdrawn.includes(row.id);
+            return el("tr", { className: out ? "withdrawn" : "" }, [
+              el("td", { className: "num", text: String(index + 1) }),
+              el("td", { className: "name", text: classroom.studentName(row.id) + (row.byes ? ` (bay ×${row.byes})` : "") }),
+              el("td", { className: "num strong", text: pointsText(row.points) }),
+              el("td", { className: "num", text: pointsText(row.buchholz) }),
+              el("td", { className: "num", text: String(row.wins) }),
+              el("td", { className: "num", text: String(row.draws) }),
+              el("td", { className: "num", text: String(row.losses) }),
+              el("td", { className: "actions" }, [
+                t.finished
+                  ? null
+                  : el("button", {
+                      className: "link-button",
+                      type: "button",
+                      text: out ? "Geri al" : "Çekildi",
+                      title: out ? "Sonraki turlarda yeniden eşleştirilsin" : "Sonraki turlarda eşleştirilmesin",
+                      onClick: () => {
+                        classroom.toggleWithdrawn(t.id, row.id);
+                        draw();
+                      }
+                    })
+              ])
+            ]);
+          }))
+        ])
+      ]),
+      !t.finished && outsiders.length
+        ? el("div", { className: "tour-late" }, [
+            el("span", { className: "class-hint", text: "Geç katılan öğrenci (kaçırdığı turlar 0 puan sayılır):" }),
+            el("select", {
+              className: "class-select",
+              "aria-label": "Turnuvaya öğrenci ekle",
+              onChange: (event) => {
+                if (!event.target.value) return;
+                classroom.addTournamentPlayer(t.id, event.target.value);
+                sound.play("success");
+                draw();
+              }
+            }, [
+              el("option", { value: "", text: "Öğrenci ekle…" }),
+              ...outsiders.map((student) => el("option", { value: student.id, text: student.name }))
+            ])
+          ])
+        : null
+    ]);
+  }
+
+  draw();
+
+  return pageShell(
+    "Turnuva",
+    "Seçili sınıfın öğrencileriyle İsviçre sistemi turnuva.",
+    [host],
+    { compact: true }
+  );
+}
+
+  Object.defineProperty(__d, "TournamentPage", { get: () => TournamentPage, enumerable: true });
+},
+
 "src/app.js": function (__d) {
 const { el, clear } = __yukle("src/utils/dom.js");
 const { currentRoute, navigate, onRouteChange } = __yukle("src/utils/router.js");
@@ -50230,6 +52919,9 @@ const { TeacherPage } = __yukle("src/pages/TeacherPage.js");
 const { BadgesPage } = __yukle("src/pages/BadgesPage.js");
 const { ProfilePage } = __yukle("src/pages/ProfilePage.js");
 const { SettingsPage } = __yukle("src/pages/SettingsPage.js");
+const { ClassesPage } = __yukle("src/pages/ClassesPage.js");
+const { TournamentPage } = __yukle("src/pages/TournamentPage.js");
+const { classroom } = __yukle("src/services/ClassroomService.js");
 const progress = new ProgressService();
 const sound = new SoundService(progress);
 const root = document.querySelector("#app");
@@ -50237,6 +52929,8 @@ const root = document.querySelector("#app");
 const pages = {
   home: HomePage,
   plan: PlanPage,
+  siniflar: ClassesPage,
+  turnuva: TournamentPage,
   learn: LearnPage,
   board: BoardPage,
   pieces: PiecesPage,
@@ -50284,6 +52978,7 @@ function renderNav(route) {
  */
 let xpStat = null;
 let starStat = null;
+let classPicker = null;
 
 function renderTopbar() {
   const collapsed = Boolean(progress.state.settings.navCollapsed);
@@ -50304,10 +52999,52 @@ function renderTopbar() {
       },
       html: icon(collapsed ? "menuOpen" : "menuClose")
     }),
+    renderClassPicker(),
     xpStat,
     starStat,
     el("button", { className: "icon-button", type: "button", title: "Ayarlar", onClick: () => navigate("settings"), html: icon("settings") })
   ]);
+}
+
+/**
+ * Üst çubuktaki aktif sınıf seçicisi.
+ *
+ * Seçim uygulama genelindedir: İki Kişilik Oyun ve Turnuva öğrencileri bu
+ * sınıftan alır. Sınıf listesi değişince seçenekler yerinde yenilenir (bkz.
+ * syncClassPicker); değiştirilince ise o sınıfla çalışan ekran tazelenmelidir,
+ * bu yüzden sayfa yeniden çizilir.
+ */
+function renderClassPicker() {
+  classPicker = el("select", {
+    className: "class-picker-select",
+    "aria-label": "Aktif sınıf",
+    onChange: (event) => {
+      if (event.target.value === "__new") {
+        navigate("siniflar");
+        syncClassPicker();
+        return;
+      }
+      sound.play("click");
+      classroom.setActiveClass(event.target.value);
+      render();
+    }
+  });
+  syncClassPicker();
+  return el("label", { className: "class-picker", title: "Aktif sınıf" }, [
+    el("span", { className: "class-picker-emoji", text: "🏫" }),
+    classPicker
+  ]);
+}
+
+function syncClassPicker() {
+  if (!classPicker) return;
+  const active = classroom.state.activeClassId || "";
+  classPicker.replaceChildren(
+    el("option", { value: "", text: classroom.classes.length ? "Sınıf seç" : "Sınıf yok" }),
+    ...classroom.classes.map((item) => el("option", { value: item.id, text: item.name })),
+    el("option", { value: "__new", text: "＋ Sınıfları yönet…" })
+  );
+  classPicker.value = active;
 }
 
 function render() {
@@ -50364,6 +53101,7 @@ function bump(node, text) {
 // Abonelik BİR KEZ kurulur; render() her sayfa geçişinde yeni düğümler üretse de
 // syncTopbar güncel referansları kullanır.
 progress.onChange(syncTopbar);
+classroom.onChange(syncClassPicker);
 
 onRouteChange(render);
 render();

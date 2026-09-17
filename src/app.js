@@ -22,6 +22,9 @@ import { TeacherPage } from "./pages/TeacherPage.js";
 import { BadgesPage } from "./pages/BadgesPage.js";
 import { ProfilePage } from "./pages/ProfilePage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
+import { ClassesPage } from "./pages/ClassesPage.js";
+import { TournamentPage } from "./pages/TournamentPage.js";
+import { classroom } from "./services/ClassroomService.js";
 
 const progress = new ProgressService();
 const sound = new SoundService(progress);
@@ -30,6 +33,8 @@ const root = document.querySelector("#app");
 const pages = {
   home: HomePage,
   plan: PlanPage,
+  siniflar: ClassesPage,
+  turnuva: TournamentPage,
   learn: LearnPage,
   board: BoardPage,
   pieces: PiecesPage,
@@ -77,6 +82,7 @@ function renderNav(route) {
  */
 let xpStat = null;
 let starStat = null;
+let classPicker = null;
 
 function renderTopbar() {
   const collapsed = Boolean(progress.state.settings.navCollapsed);
@@ -97,10 +103,52 @@ function renderTopbar() {
       },
       html: icon(collapsed ? "menuOpen" : "menuClose")
     }),
+    renderClassPicker(),
     xpStat,
     starStat,
     el("button", { className: "icon-button", type: "button", title: "Ayarlar", onClick: () => navigate("settings"), html: icon("settings") })
   ]);
+}
+
+/**
+ * Üst çubuktaki aktif sınıf seçicisi.
+ *
+ * Seçim uygulama genelindedir: İki Kişilik Oyun ve Turnuva öğrencileri bu
+ * sınıftan alır. Sınıf listesi değişince seçenekler yerinde yenilenir (bkz.
+ * syncClassPicker); değiştirilince ise o sınıfla çalışan ekran tazelenmelidir,
+ * bu yüzden sayfa yeniden çizilir.
+ */
+function renderClassPicker() {
+  classPicker = el("select", {
+    className: "class-picker-select",
+    "aria-label": "Aktif sınıf",
+    onChange: (event) => {
+      if (event.target.value === "__new") {
+        navigate("siniflar");
+        syncClassPicker();
+        return;
+      }
+      sound.play("click");
+      classroom.setActiveClass(event.target.value);
+      render();
+    }
+  });
+  syncClassPicker();
+  return el("label", { className: "class-picker", title: "Aktif sınıf" }, [
+    el("span", { className: "class-picker-emoji", text: "🏫" }),
+    classPicker
+  ]);
+}
+
+function syncClassPicker() {
+  if (!classPicker) return;
+  const active = classroom.state.activeClassId || "";
+  classPicker.replaceChildren(
+    el("option", { value: "", text: classroom.classes.length ? "Sınıf seç" : "Sınıf yok" }),
+    ...classroom.classes.map((item) => el("option", { value: item.id, text: item.name })),
+    el("option", { value: "__new", text: "＋ Sınıfları yönet…" })
+  );
+  classPicker.value = active;
 }
 
 function render() {
@@ -157,6 +205,7 @@ function bump(node, text) {
 // Abonelik BİR KEZ kurulur; render() her sayfa geçişinde yeni düğümler üretse de
 // syncTopbar güncel referansları kullanır.
 progress.onChange(syncTopbar);
+classroom.onChange(syncClassPicker);
 
 onRouteChange(render);
 render();

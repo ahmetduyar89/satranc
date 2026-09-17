@@ -33,6 +33,8 @@ import { icon } from "../components/Icon.js";
 import { pieceHTML } from "../components/PieceGlyph.js";
 import { burst } from "../animations/effects.js";
 import { pageShell, focusToggle } from "./pageUtils.js";
+import { navigate, routeParam } from "../utils/router.js";
+import { classroom } from "../services/ClassroomService.js";
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -56,11 +58,11 @@ const COLOR_NAMES = { w: "Beyaz", b: "Siyah" };
  * oyunların sayısını belirgin biçimde azaltır.
  */
 const TIME_CONTROLS = [
-  { id: "yok", label: "Süresiz", detail: "Saat yok", base: 0, increment: 0 },
-  { id: "5", label: "5 dk", detail: "Yıldırım", base: 300, increment: 0 },
-  { id: "10", label: "10 dk", detail: "Hızlı", base: 600, increment: 0 },
-  { id: "15+10", label: "15+10", detail: "Turnuva", base: 900, increment: 10 },
-  { id: "ozel", label: "Özel", detail: "Kendin seç", base: 180, increment: 2 }
+  { id: "yok", label: "Süresiz", detail: "Saat yok", icon: "⚪", base: 0, increment: 0 },
+  { id: "5", label: "5 dk", detail: "Yıldırım", icon: "⚡", base: 300, increment: 0 },
+  { id: "10", label: "10 dk", detail: "Hızlı", icon: "🏃", base: 600, increment: 0 },
+  { id: "15+10", label: "15+10", detail: "Turnuva", icon: "🏆", base: 900, increment: 10 },
+  { id: "ozel", label: "Özel Süre", detail: "Kendin belirle", icon: "⚙️", base: 180, increment: 2 }
 ];
 
 /** Maç puanını satranç geleneğine göre yazar: 0.5 → "½", 1.5 → "1½". */
@@ -118,6 +120,27 @@ export function DuelPage({ sound }) {
   let finished = false; // sonuç kartı bir kez gösterilsin
 
   const names = { w: "Beyaz Oyuncu", b: "Siyah Oyuncu" };
+
+  /* --- Sınıf ve turnuva kaydı --- */
+
+  /** Seçili öğrencilerin kimlikleri; misafir oyuncu için null. */
+  const players = { w: null, b: null };
+
+  /**
+   * Turnuva masası: Turnuva ekranındaki "Tahtada Oyna" buraya
+   * #/duello?turnuva=…&masa=… ile gelir. Oyuncular ve renkleri masadan gelir.
+   */
+  const tourCtx = classroom.findBoard(routeParam("turnuva"), routeParam("masa"));
+  if (tourCtx && tourCtx.board.blackId !== null) {
+    players.w = tourCtx.board.whiteId;
+    players.b = tourCtx.board.blackId;
+    names.w = classroom.studentName(players.w);
+    names.b = classroom.studentName(players.b);
+  }
+  const tourBoard = tourCtx && tourCtx.board.blackId !== null ? tourCtx : null;
+
+  let savedMatch = null; // bu oyunun kaydı; oyun geri alınırsa silinir
+  let tourRecorded = false; // turnuva masasına bir kez yazılır
 
   /* --- Saat --- */
 
@@ -576,6 +599,7 @@ export function DuelPage({ sound }) {
 
     startFen = setupFen(startTurn);
     chess.load(startFen);
+    savedMatch = null;
     phase = "play";
     finished = false;
     lastAward = null;
@@ -601,6 +625,7 @@ export function DuelPage({ sound }) {
     if (!startFen) return;
     chess.load(startFen);
     finished = false;
+    savedMatch = null;
     // Yeni oyunun puanı ayrı yazılır; biten oyunun puanı maç skorunda KALIR.
     lastAward = null;
     moveList.replaceChildren();
@@ -707,6 +732,8 @@ export function DuelPage({ sound }) {
       match.b -= lastAward.b;
       lastAward = null;
     }
+    // Biten oyunun kaydı da geri alınır; oyun devam edecek.
+    if (finished) unsaveResult();
     finished = false;
     resultHost.replaceChildren();
     if (moveList.lastChild) moveList.lastChild.remove();
@@ -749,6 +776,7 @@ export function DuelPage({ sound }) {
     stopTicking();
     awardMatch(winner);
     sound.play("badge");
+    const saved = saveResult(winner, reason);
 
     const winnerLine =
       winner === null ? "Beraberlik — ikiniz de iyi oynadınız." : `Kazanan: ${names[winner]}`;
@@ -762,7 +790,16 @@ export function DuelPage({ sound }) {
           className: "duel-result-match",
           text: `Maç skoru — ${names.w} ${scoreText(match.w)} : ${scoreText(match.b)} ${names.b}`
         }),
+        saved ? el("p", { className: `duel-result-saved ${saved.tone}`, text: saved.text }) : null,
         el("div", { className: "duel-result-actions" }, [
+          tourBoard
+            ? el("button", {
+                className: "primary",
+                type: "button",
+                text: "Turnuvaya Dön",
+                onClick: () => navigate("turnuva", { id: tourBoard.tournament.id })
+              })
+            : null,
           el("button", {
             className: "primary",
             type: "button",
@@ -780,6 +817,61 @@ export function DuelPage({ sound }) {
     );
     burst(resultHost);
     refresh();
+  }
+
+  /**
+   * Biten oyunu öğrencilerin kaydına (ya da turnuva masasına) yazar.
+   * @returns {{text:string, tone:string}|null} Sonuç kartında gösterilecek not.
+   */
+  function saveResult(winner, reason) {
+    const result = winner === null ? "½-½" : winner === "w" ? "1-0" : "0-1";
+    const history = chess.getHistory();
+    const meta = {
+      reason,
+      moves: Math.ceil(history.length / 2),
+      timeControl: timeControl.id === "yok" ? "" : timeControl.label
+    };
+
+    if (tourBoard) {
+      if (tourRecorded) {
+        return { text: "Bu masanın sonucu zaten turnuvaya işlendi. Değiştirmek için turnuva ekranını kullan.", tone: "" };
+      }
+      savedMatch = classroom.setBoardResult(tourBoard.tournament.id, tourBoard.board.id, result, meta);
+      tourRecorded = Boolean(savedMatch);
+      return savedMatch
+        ? { text: `✓ Sonuç turnuvaya işlendi: ${tourBoard.tournament.name}, ${tourBoard.round}. tur, Masa ${tourBoard.board.table}.`, tone: "ok" }
+        : null;
+    }
+
+    const active = classroom.activeClass;
+    if (!active || !players.w || !players.b || players.w === players.b) return null;
+    savedMatch = classroom.recordMatch({ ...meta, classId: active.id, whiteId: players.w, blackId: players.b, result, source: "duel" });
+    return savedMatch ? { text: `✓ Sonuç ${names.w} ve ${names.b} için ${active.name} kaydına işlendi.`, tone: "ok" } : null;
+  }
+
+  /** Geri alınan oyunun kaydını siler. */
+  function unsaveResult() {
+    if (!savedMatch) return;
+    if (tourBoard) {
+      classroom.setBoardResult(tourBoard.tournament.id, tourBoard.board.id, null);
+      tourRecorded = false;
+    } else {
+      classroom.deleteMatch(savedMatch.id);
+    }
+    savedMatch = null;
+  }
+
+  /** Pes etme ve anlaşmalı beraberlik — motorun kendi bulamayacağı sonuçlar. */
+  function resign(color) {
+    if (phase !== "play" || finished) return;
+    if (!window.confirm(`${names[color]} pes ediyor. Oyun bitirilsin mi?`)) return;
+    endGame({ winner: color === "w" ? "b" : "w", reason: `${names[color]} pes etti.` });
+  }
+
+  function agreeDraw() {
+    if (phase !== "play" || finished) return;
+    if (!window.confirm("İki oyuncu beraberlikte anlaştı mı?")) return;
+    endGame({ winner: null, reason: "Oyuncular beraberlikte anlaştı." });
   }
 
   /** Hamle listesine yeni satır ekler. */
@@ -1182,10 +1274,19 @@ export function DuelPage({ sound }) {
     ])
   ]);
 
+  const customBadge = el("span", {
+    className: "custom-opt-badge",
+    text: `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "")
+  });
+
+  function updateCustomBadge() {
+    customBadge.textContent = `${customMinutes} dk` + (customIncrement > 0 ? ` + ${customIncrement} sn` : "");
+  }
+
   function applyCustomTime() {
     timeControl = {
       id: "ozel",
-      label: "Özel",
+      label: "Özel Süre",
       detail: `${customMinutes} dk`,
       base: Math.max(1, customMinutes) * 60,
       increment: Math.max(0, customIncrement)
@@ -1195,6 +1296,7 @@ export function DuelPage({ sound }) {
     }
     customTimeBox.hidden = false;
     updateCustomInputs();
+    updateCustomBadge();
     resetClocks();
     timeNote.textContent = timeHint();
   }
@@ -1209,35 +1311,60 @@ export function DuelPage({ sound }) {
     applyCustomTime();
   }
 
-  const timeButtonsContainer = el("div", { className: "segmented duel-times" });
+  const timeButtonsContainer = el("div", { className: "duel-time-grid" });
 
-  const timeButtons = TIME_CONTROLS.map((option) =>
-    el("button", {
-      className: `seg-button ${option.id === timeControl.id ? "active" : ""}`,
+  const timeButtons = TIME_CONTROLS.map((option) => {
+    if (option.id === "ozel") {
+      return el("button", {
+        className: `time-btn custom-opt ${option.id === timeControl.id ? "active" : ""}`,
+        type: "button",
+        "data-time": "ozel",
+        title: "Özel süre — istediğin süreyi kendin belirle",
+        onClick: () => {
+          sound.play("click");
+          applyCustomTime();
+        }
+      }, [
+        el("div", { className: "custom-opt-left" }, [
+          el("span", { className: "time-btn-icon", text: option.icon }),
+          el("div", { className: "custom-opt-texts" }, [
+            el("strong", { text: "Özel Süre" }),
+            el("small", { text: "İstediğin süreyi belirle" })
+          ])
+        ]),
+        customBadge
+      ]);
+    }
+
+    return el("button", {
+      className: `time-btn ${option.id === timeControl.id ? "active" : ""}`,
       type: "button",
       "data-time": option.id,
       title: `${option.label} — ${option.detail}`,
       onClick: (event) => {
         sound.play("click");
-        if (option.id === "ozel") {
-          applyCustomTime();
-        } else {
-          timeControl = option;
-          customTimeBox.hidden = true;
-          if (option.base > 0) {
-            customMinutes = Math.floor(option.base / 60);
-            customIncrement = option.increment;
-            updateCustomInputs();
-          }
-          for (const button of timeButtonsContainer.children) {
-            button.classList.toggle("active", button.dataset.time === option.id);
-          }
-          resetClocks();
-          timeNote.textContent = timeHint();
+        timeControl = option;
+        customTimeBox.hidden = true;
+        if (option.base > 0) {
+          customMinutes = Math.floor(option.base / 60);
+          customIncrement = option.increment;
+          updateCustomInputs();
+          updateCustomBadge();
         }
+        for (const button of timeButtonsContainer.children) {
+          button.classList.toggle("active", button.dataset.time === option.id);
+        }
+        resetClocks();
+        timeNote.textContent = timeHint();
       }
-    }, [el("strong", { text: option.label }), el("small", { text: option.detail })])
-  );
+    }, [
+      el("div", { className: "time-btn-head" }, [
+        el("span", { className: "time-btn-icon", text: option.icon }),
+        el("strong", { text: option.label })
+      ]),
+      el("small", { text: option.detail })
+    ]);
+  });
   timeButtonsContainer.append(...timeButtons);
 
   timeNote.textContent = timeHint();
@@ -1256,6 +1383,77 @@ export function DuelPage({ sound }) {
         refresh();
       }
     });
+  }
+
+  const recordNote = el("p", { className: "duel-record-note" });
+
+  /** Sonucun nereye kaydedileceğini söyler. */
+  function updateRecordNote() {
+    const active = classroom.activeClass;
+    let text;
+    let tone = "";
+    if (tourBoard) {
+      const previous = classroom.boardResult(tourBoard.board);
+      text = `🏆 ${tourBoard.tournament.name} · ${tourBoard.round}. tur · Masa ${tourBoard.board.table}. Sonuç turnuvaya işlenecek.` +
+        (previous ? ` (Şu an girili sonuç: ${previous} — oyun bitince yenisi yazılır.)` : "");
+      tone = "ok";
+    } else if (!active) {
+      text = "Sonuçları öğrencilere kaydetmek için üst çubuktan sınıf seç.";
+    } else if (players.w && players.b && players.w === players.b) {
+      text = "Aynı öğrenci iki tarafta seçili — sonuç kaydedilmez.";
+      tone = "warn";
+    } else if (players.w && players.b) {
+      text = `✓ Sonuç ${names.w} ve ${names.b} için kaydedilecek.`;
+      tone = "ok";
+    } else {
+      text = "Sonucun kaydedilmesi için iki öğrenci de seç.";
+    }
+    recordNote.textContent = text;
+    recordNote.className = `duel-record-note ${tone}`;
+  }
+
+  /**
+   * Oyuncu seçimi: sınıf seçiliyse öğrenci listesi, değilse serbest ad.
+   * Turnuva masasında oyuncular sabittir.
+   */
+  function playerPicker(color) {
+    const label = `${color === "w" ? "♔" : "♚"} ${COLOR_NAMES[color]}`;
+    if (tourBoard) {
+      return el("div", { className: "duel-player-fixed" }, [
+        el("span", { text: label }),
+        el("strong", { text: names[color] })
+      ]);
+    }
+
+    const active = classroom.activeClass;
+    const students = active ? classroom.students(active.id) : [];
+    if (students.length === 0) return nameInput(color);
+
+    const guest = nameInput(color);
+    guest.hidden = true;
+    const select = el("select", {
+      className: "duel-name-input duel-player-select",
+      "aria-label": `${COLOR_NAMES[color]} oyuncu`,
+      onChange: (event) => {
+        const value = event.target.value;
+        guest.hidden = value !== "__guest";
+        if (value && value !== "__guest") {
+          players[color] = value;
+          names[color] = classroom.studentName(value);
+        } else {
+          players[color] = null;
+          names[color] = (value === "__guest" && guest.value.trim()) || `${COLOR_NAMES[color]} Oyuncu`;
+        }
+        sound.play("click");
+        updateRecordNote();
+        refresh();
+      }
+    }, [
+      el("option", { value: "", text: `${label} — öğrenci seç` }),
+      ...students.map((student) => el("option", { value: student.id, text: student.name })),
+      el("option", { value: "__guest", text: "Misafir (kaydedilmez)" })
+    ]);
+    return el("div", { className: "duel-player-pick" }, [select, guest]);
   }
 
   const setupPanel = el("div", { className: "duel-panel-body" }, [
@@ -1290,8 +1488,17 @@ export function DuelPage({ sound }) {
     timeButtonsContainer,
     customTimeBox,
     timeNote,
-    el("label", { className: "panel-label", text: "Oyuncular" }),
-    el("div", { className: "duel-names" }, [nameInput("w"), nameInput("b")]),
+    el("label", { className: "panel-label", text: tourBoard ? "Turnuva masası" : "Oyuncular" }),
+    el("div", { className: "duel-names" }, [playerPicker("w"), playerPicker("b")]),
+    recordNote,
+    tourBoard
+      ? el("button", {
+          className: "link-button",
+          type: "button",
+          text: "← Turnuvaya dön",
+          onClick: () => navigate("turnuva", { id: tourBoard.tournament.id })
+        })
+      : null,
     el("button", {
       className: "primary duel-start",
       type: "button",
@@ -1364,6 +1571,11 @@ export function DuelPage({ sound }) {
     ]),
     statusEl,
     autoFlipBox,
+    el("div", { className: "duel-end-row" }, [
+      el("button", { className: "ghost small", type: "button", text: "🏳 Beyaz pes etti", onClick: () => resign("w") }),
+      el("button", { className: "ghost small", type: "button", text: "🤝 Beraberlik", onClick: () => agreeDraw() }),
+      el("button", { className: "ghost small", type: "button", text: "🏳 Siyah pes etti", onClick: () => resign("b") })
+    ]),
     moveList,
     resultHost
   ]);
@@ -1392,6 +1604,12 @@ export function DuelPage({ sound }) {
 
   buildBoards();
   openSetup(null);
+  updateRecordNote();
+  // Turnuva maçı standart dizilişle başlar; çocuklar yine de düzenleyebilir.
+  if (tourBoard) {
+    setup = standardSetup();
+    applySetup();
+  }
 
   return page;
 }

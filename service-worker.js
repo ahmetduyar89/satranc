@@ -6,7 +6,7 @@
  * önbellekten servis eder. Böylece sınıfta internet olmasa da platform açılır.
  */
 
-const CACHE_NAME = "satranc-okulu-v29";
+const CACHE_NAME = "satranc-okulu-v30";
 
 /** Uygulamanın açılması için gereken çekirdek dosyalar. */
 const APP_SHELL = [
@@ -39,6 +39,8 @@ const APP_SHELL = [
   "./src/models/progress.js",
   "./src/services/ProgressService.js",
   "./src/services/GameService.js",
+  "./src/services/ClassroomService.js",
+  "./src/services/SwissPairing.js",
   "./src/audio/SoundService.js",
   "./src/animations/effects.js",
 
@@ -79,6 +81,8 @@ const APP_SHELL = [
   "./src/pages/BadgesPage.js",
   "./src/pages/ProfilePage.js",
   "./src/pages/SettingsPage.js",
+  "./src/pages/ClassesPage.js",
+  "./src/pages/TournamentPage.js",
 
   "./src/styles/base.css",
   "./src/styles/layout.css",
@@ -90,6 +94,7 @@ const APP_SHELL = [
   "./src/styles/games.css",
   "./src/styles/lessons.css",
   "./src/styles/plan.css",
+  "./src/styles/classes.css",
   "./src/styles/theme.css",
 
   "./src/assets/icons/app-icon.svg"
