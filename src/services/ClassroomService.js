@@ -38,7 +38,7 @@ export function tidyName(raw) {
 }
 
 function emptyState() {
-  return { version: VERSION, activeClassId: null, classes: [], matches: [], tournaments: [] };
+  return { version: VERSION, activeClassId: null, classes: [], matches: [], tournaments: [], rosterVersion: null };
 }
 
 export class ClassroomService {
@@ -76,6 +76,7 @@ export class ClassroomService {
     state.matches = Array.isArray(data.matches) ? data.matches.filter((match) => match && RESULT_POINTS[match.result] !== undefined) : [];
     state.tournaments = Array.isArray(data.tournaments) ? data.tournaments.filter((t) => t && Array.isArray(t.rounds)) : [];
     state.activeClassId = state.classes.some((item) => item.id === data.activeClassId) ? data.activeClassId : null;
+    state.rosterVersion = typeof data.rosterVersion === "string" ? data.rosterVersion : null;
     return state;
   }
 
@@ -464,6 +465,51 @@ export class ClassroomService {
     if (!t) return;
     t.finished = Boolean(finished);
     this.save();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Gömülü okul listesi
+   * ---------------------------------------------------------------- */
+
+  /** Bu bilgisayar gömülü listenin bu sürümünü henüz almadı mı? */
+  rosterPending(roster) {
+    return Boolean(roster?.version) && this.state.rosterVersion !== roster.version;
+  }
+
+  /**
+   * Çözülmüş okul listesini BİRLEŞTİREREK ekler; hiçbir şeyi silmez.
+   *
+   * Kimlikler listede sabittir (bkz. tools/sinif-listesi-gom.py): aynı sınıf
+   * ve öğrenci her bilgisayarda aynı kimliği taşır. Bu yüzden:
+   *   • bilgisayarda olmayan sınıf ve öğrenciler eklenir,
+   *   • var olanlara dokunulmaz (öğretmenin düzelttiği ad korunur),
+   *   • listeden çıkarılmış öğrenci bilgisayarda kalır; maç geçmişi bozulmaz.
+   *
+   * @returns {{classes:number, students:number}} Eklenen sayılar.
+   */
+  applyRoster(roster, version) {
+    let addedClasses = 0;
+    let addedStudents = 0;
+
+    for (const source of roster?.classes || []) {
+      let item = this.getClass(source.id);
+      if (!item) {
+        item = { id: source.id, name: source.name, students: [] };
+        this.state.classes.push(item);
+        addedClasses += 1;
+      }
+      for (const student of source.students || []) {
+        // Öğretmenin bu bilgisayarda listeden çıkardığı öğrenci de "var" sayılır;
+        // liste güncellemesi o kararı geri almaz.
+        if (item.students.some((s) => s.id === student.id)) continue;
+        item.students.push({ id: student.id, name: student.name, removed: false });
+        addedStudents += 1;
+      }
+    }
+
+    this.state.rosterVersion = version;
+    this.save();
+    return { classes: addedClasses, students: addedStudents };
   }
 
   /* ---------------------------------------------------------------- *

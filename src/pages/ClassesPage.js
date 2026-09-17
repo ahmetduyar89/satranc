@@ -14,6 +14,8 @@ import { el } from "../utils/dom.js";
 import { navigate } from "../utils/router.js";
 import { icon } from "../components/Icon.js";
 import { classroom } from "../services/ClassroomService.js";
+import { decryptRoster } from "../services/RosterCrypto.js";
+import { CLASS_ROSTER } from "../data/classRoster.js";
 import { pageShell } from "./pageUtils.js";
 
 /** ½ puanı okunur yazar: 2.5 → "2½". */
@@ -99,6 +101,7 @@ export function ClassesPage({ sound }) {
     });
 
     sidebar.replaceChildren(
+      ...(classroom.rosterPending(CLASS_ROSTER) ? [rosterCard()] : []),
       el("section", { className: "class-card" }, [
         el("h2", { className: "class-card-title", text: "Sınıflar" }),
         classroom.classes.length === 0
@@ -160,6 +163,78 @@ export function ClassesPage({ sound }) {
     );
   }
 
+  /**
+   * Gömülü okul listesi bu bilgisayara henüz yüklenmediyse (ya da liste
+   * güncellendiyse) öğretmen şifresini ister. Liste şifreli olduğu için
+   * siteyi açan başkası adları göremez.
+   */
+  function rosterCard() {
+    const firstTime = !classroom.state.rosterVersion;
+    const input = el("input", {
+      className: "class-input",
+      type: "password",
+      autocomplete: "current-password",
+      placeholder: "Öğretmen şifresi",
+      "aria-label": "Öğretmen şifresi"
+    });
+    const message = el("p", { className: "class-hint", text: "" });
+    const button = el("button", { className: "primary small", type: "button", text: firstTime ? "Listeyi Yükle" : "Güncelle" });
+
+    const unlock = async () => {
+      if (!input.value) {
+        input.focus();
+        return;
+      }
+      button.disabled = true;
+      message.textContent = "Liste açılıyor…";
+      message.className = "class-hint";
+      let roster = null;
+      try {
+        roster = await decryptRoster(CLASS_ROSTER, input.value);
+      } catch (error) {
+        message.textContent = error.message || "Liste açılamadı.";
+        message.className = "class-hint danger-text";
+        button.disabled = false;
+        return;
+      }
+      if (!roster) {
+        sound.play("error");
+        message.textContent = "Şifre yanlış.";
+        message.className = "class-hint danger-text";
+        button.disabled = false;
+        input.select();
+        return;
+      }
+
+      const added = classroom.applyRoster(roster, CLASS_ROSTER.version);
+      sound.play("success");
+      selectedStudentId = null;
+      say(
+        added.classes || added.students
+          ? `Okul listesi yüklendi: ${added.classes} sınıf, ${added.students} öğrenci eklendi. Bu bilgisayarın sınıfını soldan ya da üst çubuktan seç.`
+          : "Okul listesi zaten güncel.",
+        "correct"
+      );
+      draw();
+    };
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") unlock();
+    });
+    button.addEventListener("click", unlock);
+
+    return el("section", { className: "class-card class-roster" }, [
+      el("h2", { className: "class-card-title", text: firstTime ? "🏫 Okul listesi hazır" : "🏫 Güncel okul listesi var" }),
+      el("p", {
+        className: "class-hint",
+        text: firstTime
+          ? "Okulun sınıf ve öğrenci listesi uygulamada hazır. Bu bilgisayara yüklemek için öğretmen şifresini gir (bir kez yeterli)."
+          : "Sınıf listesi güncellendi. Yeni öğrencileri eklemek için şifreyi gir; buradaki maç ve turnuva kayıtları silinmez."
+      }),
+      el("div", { className: "class-add" }, [input, button]),
+      message
+    ]);
+  }
+
   /* ---------------------------------------------------------------- *
    * Sağ sütun: seçili sınıf
    * ---------------------------------------------------------------- */
@@ -168,11 +243,18 @@ export function ClassesPage({ sound }) {
     const item = classroom.activeClass;
     if (!item) {
       main.replaceChildren(
+        ...(notice.text ? [el("p", { className: `lesson-status ${notice.tone}`, text: notice.text })] : []),
         el("section", { className: "class-card class-welcome" }, [
           el("span", { className: "class-welcome-emoji", text: "🏫" }),
-          el("h2", { text: classroom.classes.length ? "Bir sınıf seç" : "İlk sınıfını ekle" }),
+          el("h2", {
+            text: classroom.classes.length
+              ? "Bir sınıf seç"
+              : classroom.rosterPending(CLASS_ROSTER) ? "Okul listesini yükle" : "İlk sınıfını ekle"
+          }),
           el("p", {
-            text: "Sınıf seçtiğinde öğrencilerin, maç sonuçları ve sıralama burada görünür. İki Kişilik Oyun ve Turnuva ekranları da bu sınıfın listesini kullanır."
+            text: !classroom.classes.length && classroom.rosterPending(CLASS_ROSTER)
+              ? "Sınıflar ve öğrenciler uygulamada hazır. Soldaki karta öğretmen şifresini girmen yeterli."
+              : "Sınıf seçtiğinde öğrencilerin, maç sonuçları ve sıralama burada görünür. İki Kişilik Oyun ve Turnuva ekranları da bu sınıfın listesini kullanır."
           })
         ])
       );

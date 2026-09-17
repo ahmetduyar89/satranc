@@ -53,7 +53,7 @@ export function TournamentPage({ sound }) {
     return el("section", { className: "class-card class-welcome" }, [
       el("span", { className: "class-welcome-emoji", text: "🏆" }),
       el("h2", { text: "Önce bir sınıf seç" }),
-      el("p", { text: "Turnuva, seçili sınıfın öğrencileriyle yapılır. Üst çubuktan sınıf seçebilir ya da Sınıflarım ekranından yeni sınıf ekleyebilirsin." }),
+      el("p", { text: "Turnuva, seçili sınıfın öğrencileriyle yapılır. Üst çubuktan sınıf seçebilirsin. Bu bilgisayarda henüz sınıf yoksa Sınıflarım ekranından okul listesini yükle." }),
       el("button", { className: "primary", type: "button", text: "Sınıflarım", onClick: () => navigate("siniflar") })
     ]);
   }

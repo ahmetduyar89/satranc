@@ -76,7 +76,24 @@ geri alınır.
 
 ### Sınıflar ve öğrenciler
 
-Sol menüdeki **Sınıflarım** bölümünde:
+**Okul listesi uygulamada hazır gelir.** Her bilgisayarda bir kez:
+**Sınıflarım** → *Okul listesi hazır* kartına öğretmen şifresini yaz →
+**Listeyi Yükle**. Bütün sınıflar ve öğrenciler gelir; üst çubuktan o
+bilgisayarın sınıfını seç. Liste şifreli olduğu için siteyi açan başkası
+öğrenci adlarını göremez.
+
+Liste değişince (yeni öğrenci, yeni şube) e-Okul'dan yeni *Şube Mevcut
+Listesi* Excel'ini indir ve şunu çalıştır, sonra değişiklikleri GitHub'a gönder:
+
+```bash
+python3 tools/sinif-listesi-gom.py ~/Downloads/Şube_Mevcut_Listesi.xlsx
+```
+
+Bilgisayarlarda *Güncel okul listesi var* kartı çıkar; şifre girilince yalnızca
+yeni sınıf ve öğrenciler eklenir, maç ve turnuva kayıtları silinmez. Araç
+şifreyi her çalıştırmada sorar; farklı bir şifre yazarsan yeni şifre geçerli olur.
+
+Sol menüdeki **Sınıflarım** bölümünde ayrıca:
 
 1. **Sınıf Ekle** ile sınıfı oluştur (örn. *4-B*).
 2. Öğrencileri tek tek yaz ya da **Liste Yapıştır** ile e-Okul/Excel listesini

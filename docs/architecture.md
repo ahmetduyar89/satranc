@@ -96,6 +96,7 @@ src/
     GameService.js   # Oyun akışı, hamle kalitesi, ipucu, doğruluk raporu
     ClassroomService.js # Sınıflar, öğrenciler, maç kayıtları, turnuvalar, yedek
     SwissPairing.js  # İsviçre sistemi puanlama ve eşleştirme (saf fonksiyonlar)
+    RosterCrypto.js  # Gömülü şifreli okul listesini WebCrypto ile çözer
   styles/
     base.css        # Tasarım sistemi: renk paleti, yazı tipi, köşe ve gölge ölçeği
     layout.css
@@ -146,6 +147,10 @@ src/
   Veri `services/ClassroomService.js` içinde, ilerlemeden ayrı localStorage anahtarında
   ("satranc-okulu-siniflar") durur. Üst çubuktaki seçici aktif sınıfı belirler;
   İki Kişilik Oyun öğrencileri buradan seçer ve biten oyunu kaydeder.
+  Okul listesi `data/classRoster.js` içinde ŞİFRELİ gömülüdür (üretici:
+  `tools/sinif-listesi-gom.py`, PBKDF2 + HMAC-SHA256 akış şifresi + HMAC doğrulama).
+  Öğretmen şifresiyle çözülüp mevcut kayıtlara birleştirilir; kimlikler sabit
+  olduğu için liste güncellemesi yalnızca eksikleri ekler.
 - Turnuva: aktif sınıfın İsviçre sistemi turnuvaları (`services/SwissPairing.js`):
   puan gruplarında üst yarı–alt yarı eşleşmesi, tekrar eşleşme ve çift bay engeli,
   renk dengesi, Buchholz eşitlik bozma. Masa sonucu elle ya da "Tahtada Oyna" ile

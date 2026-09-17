@@ -115,6 +115,9 @@
 .class-icon-btn:hover { background: var(--sun-soft); }
 .class-icon-btn .icon { width: 1rem; height: 1rem; }
 
+/* Gömülü okul listesi kartı: dikkat çeksin, sayfanın ilk işi budur. */
+.class-roster { border-color: rgba(221, 139, 0, 0.45); background: linear-gradient(180deg, var(--sun-soft), var(--panel)); }
+
 /* --- Sınıf listesi --- */
 
 .class-list { display: grid; gap: 0.35rem; }
